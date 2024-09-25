@@ -7,38 +7,48 @@ import (
 	"github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
+	"github.com/absmach/magistrala/users"
 )
 
 const maxLimitSize = 100
 
-type createClientReq struct {
-	client mgclients.Client
-	token  string
+type createUserReq struct {
+	user  users.User
+	token string
 }
 
-func (req createClientReq) validate() error {
-	if len(req.client.Name) > api.MaxNameSize {
+func (req createUserReq) validate() error {
+	if len(req.user.Name) > api.MaxNameSize {
 		return apiutil.ErrNameSize
 	}
-	if req.client.Credentials.Identity == "" {
+	if len(req.user.UserName) > api.MaxNameSize {
+		return apiutil.ErrNameSize
+	}
+	if len(req.user.FirstName) > api.MaxNameSize {
+		return apiutil.ErrNameSize
+	}
+	if len(req.user.LastName) > api.MaxNameSize {
+		return apiutil.ErrNameSize
+	}
+	if req.user.Credentials.Identity == "" {
 		return apiutil.ErrMissingIdentity
 	}
-	if req.client.Credentials.Secret == "" {
+	if req.user.Credentials.Secret == "" {
 		return apiutil.ErrMissingPass
 	}
-	if !passRegex.MatchString(req.client.Credentials.Secret) {
+	if !passRegex.MatchString(req.user.Credentials.Secret) {
 		return apiutil.ErrPasswordFormat
 	}
 
-	return req.client.Validate()
+	return req.user.Validate()
 }
 
-type viewClientReq struct {
+type viewUserReq struct {
 	token string
 	id    string
 }
 
-func (req viewClientReq) validate() error {
+func (req viewUserReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
@@ -61,7 +71,7 @@ func (req viewProfileReq) validate() error {
 	return nil
 }
 
-type listClientsReq struct {
+type listUsersReq struct {
 	token    string
 	status   mgclients.Status
 	offset   uint64
@@ -69,13 +79,13 @@ type listClientsReq struct {
 	name     string
 	tag      string
 	identity string
-	metadata mgclients.Metadata
+	metadata mgclients.Metadata // this is a hanging fix for now. using mgclients.page instead of users.page
 	order    string
 	dir      string
 	id       string
 }
 
-func (req listClientsReq) validate() error {
+func (req listUsersReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
@@ -89,7 +99,7 @@ func (req listClientsReq) validate() error {
 	return nil
 }
 
-type searchClientsReq struct {
+type searchUsersReq struct {
 	token  string
 	Offset uint64
 	Limit  uint64
@@ -99,7 +109,7 @@ type searchClientsReq struct {
 	Dir    string
 }
 
-func (req searchClientsReq) validate() error {
+func (req searchUsersReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
@@ -132,14 +142,14 @@ func (req listMembersByObjectReq) validate() error {
 	return nil
 }
 
-type updateClientReq struct {
+type updateUserReq struct {
 	token    string
 	id       string
-	Name     string             `json:"name,omitempty"`
-	Metadata mgclients.Metadata `json:"metadata,omitempty"`
+	Name     string         `json:"name,omitempty"`
+	Metadata users.Metadata `json:"metadata,omitempty"`
 }
 
-func (req updateClientReq) validate() error {
+func (req updateUserReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
@@ -150,13 +160,13 @@ func (req updateClientReq) validate() error {
 	return nil
 }
 
-type updateClientTagsReq struct {
+type updateUserTagsReq struct {
 	id    string
 	token string
 	Tags  []string `json:"tags,omitempty"`
 }
 
-func (req updateClientTagsReq) validate() error {
+func (req updateUserTagsReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
@@ -167,14 +177,14 @@ func (req updateClientTagsReq) validate() error {
 	return nil
 }
 
-type updateClientRoleReq struct {
+type updateUserRoleReq struct {
 	id    string
 	token string
 	role  mgclients.Role
 	Role  string `json:"role,omitempty"`
 }
 
-func (req updateClientRoleReq) validate() error {
+func (req updateUserRoleReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
@@ -185,13 +195,13 @@ func (req updateClientRoleReq) validate() error {
 	return nil
 }
 
-type updateClientIdentityReq struct {
+type updateUserIdentityReq struct {
 	token    string
 	id       string
 	Identity string `json:"identity,omitempty"`
 }
 
-func (req updateClientIdentityReq) validate() error {
+func (req updateUserIdentityReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
@@ -202,13 +212,13 @@ func (req updateClientIdentityReq) validate() error {
 	return nil
 }
 
-type updateClientSecretReq struct {
+type updateUserSecretReq struct {
 	token     string
 	OldSecret string `json:"old_secret,omitempty"`
 	NewSecret string `json:"new_secret,omitempty"`
 }
 
-func (req updateClientSecretReq) validate() error {
+func (req updateUserSecretReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
@@ -222,12 +232,12 @@ func (req updateClientSecretReq) validate() error {
 	return nil
 }
 
-type changeClientStatusReq struct {
+type changeUserStatusReq struct {
 	token string
 	id    string
 }
 
-func (req changeClientStatusReq) validate() error {
+func (req changeUserStatusReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
@@ -238,13 +248,13 @@ func (req changeClientStatusReq) validate() error {
 	return nil
 }
 
-type loginClientReq struct {
+type loginUserReq struct {
 	Identity string `json:"identity,omitempty"`
 	Secret   string `json:"secret,omitempty"`
 	DomainID string `json:"domain_id,omitempty"`
 }
 
-func (req loginClientReq) validate() error {
+func (req loginUserReq) validate() error {
 	if req.Identity == "" {
 		return apiutil.ErrMissingIdentity
 	}

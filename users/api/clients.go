@@ -26,7 +26,7 @@ import (
 var passRegex = regexp.MustCompile("^.{8,}$")
 
 // MakeHandler returns a HTTP handler for API endpoints.
-func clientsHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *regexp.Regexp, providers ...oauth2.Provider) http.Handler {
+func usersHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *regexp.Regexp, providers ...oauth2.Provider) http.Handler {
 	passRegex = pr
 
 	opts := []kithttp.ServerOption{
@@ -36,7 +36,7 @@ func clientsHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *rege
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
 			registrationEndpoint(svc),
-			decodeCreateClientReq,
+			decodeCreateUserReq,
 			api.EncodeResponse,
 			opts...,
 		), "register_client").ServeHTTP)
@@ -49,57 +49,57 @@ func clientsHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *rege
 		), "view_profile").ServeHTTP)
 
 		r.Get("/{id}", otelhttp.NewHandler(kithttp.NewServer(
-			viewClientEndpoint(svc),
-			decodeViewClient,
+			viewUserEndpoint(svc),
+			decodeViewUser,
 			api.EncodeResponse,
 			opts...,
 		), "view_client").ServeHTTP)
 
 		r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
-			listClientsEndpoint(svc),
-			decodeListClients,
+			listUsersEndpoint(svc),
+			decodeListUsers,
 			api.EncodeResponse,
 			opts...,
 		), "list_clients").ServeHTTP)
 
 		r.Get("/search", otelhttp.NewHandler(kithttp.NewServer(
-			searchClientsEndpoint(svc),
-			decodeSearchClients,
+			searchUsersEndpoint(svc),
+			decodeSearchUsers,
 			api.EncodeResponse,
 			opts...,
 		), "search_clients").ServeHTTP)
 
 		r.Patch("/secret", otelhttp.NewHandler(kithttp.NewServer(
-			updateClientSecretEndpoint(svc),
-			decodeUpdateClientSecret,
+			updateUserSecretEndpoint(svc),
+			decodeUpdateUserSecret,
 			api.EncodeResponse,
 			opts...,
 		), "update_client_secret").ServeHTTP)
 
 		r.Patch("/{id}", otelhttp.NewHandler(kithttp.NewServer(
-			updateClientEndpoint(svc),
-			decodeUpdateClient,
+			updateUserEndpoint(svc),
+			decodeUpdateUser,
 			api.EncodeResponse,
 			opts...,
 		), "update_client").ServeHTTP)
 
 		r.Patch("/{id}/tags", otelhttp.NewHandler(kithttp.NewServer(
-			updateClientTagsEndpoint(svc),
-			decodeUpdateClientTags,
+			updateUserTagsEndpoint(svc),
+			decodeUpdateUserTags,
 			api.EncodeResponse,
 			opts...,
 		), "update_client_tags").ServeHTTP)
 
 		r.Patch("/{id}/identity", otelhttp.NewHandler(kithttp.NewServer(
-			updateClientIdentityEndpoint(svc),
-			decodeUpdateClientIdentity,
+			updateUserIdentityEndpoint(svc),
+			decodeUpdateUserIdentity,
 			api.EncodeResponse,
 			opts...,
 		), "update_client_identity").ServeHTTP)
 
 		r.Patch("/{id}/role", otelhttp.NewHandler(kithttp.NewServer(
-			updateClientRoleEndpoint(svc),
-			decodeUpdateClientRole,
+			updateUserRoleEndpoint(svc),
+			decodeUpdateUserRole,
 			api.EncodeResponse,
 			opts...,
 		), "update_client_role").ServeHTTP)
@@ -119,22 +119,22 @@ func clientsHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *rege
 		), "refresh_token").ServeHTTP)
 
 		r.Post("/{id}/enable", otelhttp.NewHandler(kithttp.NewServer(
-			enableClientEndpoint(svc),
-			decodeChangeClientStatus,
+			enableUserEndpoint(svc),
+			decodeChangeUserStatus,
 			api.EncodeResponse,
 			opts...,
 		), "enable_client").ServeHTTP)
 
 		r.Post("/{id}/disable", otelhttp.NewHandler(kithttp.NewServer(
-			disableClientEndpoint(svc),
-			decodeChangeClientStatus,
+			disableUserEndpoint(svc),
+			decodeChangeUserStatus,
 			api.EncodeResponse,
 			opts...,
 		), "disable_client").ServeHTTP)
 
 		r.Delete("/{id}", otelhttp.NewHandler(kithttp.NewServer(
-			deleteClientEndpoint(svc),
-			decodeChangeClientStatus,
+			deleteUserEndpoint(svc),
+			decodeChangeUserStatus,
 			api.EncodeResponse,
 			opts...,
 		), "delete_client").ServeHTTP)
@@ -201,8 +201,8 @@ func clientsHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *rege
 	return r
 }
 
-func decodeViewClient(_ context.Context, r *http.Request) (interface{}, error) {
-	req := viewClientReq{
+func decodeViewUser(_ context.Context, r *http.Request) (interface{}, error) {
+	req := viewUserReq{
 		token: apiutil.ExtractBearerToken(r),
 		id:    chi.URLParam(r, "id"),
 	}
@@ -216,7 +216,7 @@ func decodeViewProfile(_ context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-func decodeListClients(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeListUsers(_ context.Context, r *http.Request) (interface{}, error) {
 	s, err := apiutil.ReadStringQuery(r, api.StatusKey, api.DefClientStatus)
 	if err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
@@ -262,7 +262,7 @@ func decodeListClients(_ context.Context, r *http.Request) (interface{}, error) 
 	if err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
-	req := listClientsReq{
+	req := listUsersReq{
 		token:    apiutil.ExtractBearerToken(r),
 		status:   st,
 		offset:   o,
@@ -279,7 +279,7 @@ func decodeListClients(_ context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-func decodeSearchClients(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeSearchUsers(_ context.Context, r *http.Request) (interface{}, error) {
 	o, err := apiutil.ReadNumQuery[uint64](r, api.OffsetKey, api.DefOffset)
 	if err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
@@ -305,7 +305,7 @@ func decodeSearchClients(_ context.Context, r *http.Request) (interface{}, error
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	req := searchClientsReq{
+	req := searchUsersReq{
 		token:  apiutil.ExtractBearerToken(r),
 		Offset: o,
 		Limit:  l,
@@ -317,7 +317,7 @@ func decodeSearchClients(_ context.Context, r *http.Request) (interface{}, error
 
 	for _, field := range []string{req.Name, req.Id} {
 		if field != "" && len(field) < 3 {
-			req = searchClientsReq{
+			req = searchUsersReq{
 				token: apiutil.ExtractBearerToken(r),
 			}
 			return req, errors.Wrap(apiutil.ErrLenSearchQuery, apiutil.ErrValidation)
@@ -327,12 +327,12 @@ func decodeSearchClients(_ context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-func decodeUpdateClient(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeUpdateUser(_ context.Context, r *http.Request) (interface{}, error) {
 	if !strings.Contains(r.Header.Get("Content-Type"), api.ContentType) {
 		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
 	}
 
-	req := updateClientReq{
+	req := updateUserReq{
 		token: apiutil.ExtractBearerToken(r),
 		id:    chi.URLParam(r, "id"),
 	}
@@ -343,12 +343,12 @@ func decodeUpdateClient(_ context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-func decodeUpdateClientTags(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeUpdateUserTags(_ context.Context, r *http.Request) (interface{}, error) {
 	if !strings.Contains(r.Header.Get("Content-Type"), api.ContentType) {
 		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
 	}
 
-	req := updateClientTagsReq{
+	req := updateUserTagsReq{
 		token: apiutil.ExtractBearerToken(r),
 		id:    chi.URLParam(r, "id"),
 	}
@@ -359,12 +359,12 @@ func decodeUpdateClientTags(_ context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-func decodeUpdateClientIdentity(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeUpdateUserIdentity(_ context.Context, r *http.Request) (interface{}, error) {
 	if !strings.Contains(r.Header.Get("Content-Type"), api.ContentType) {
 		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
 	}
 
-	req := updateClientIdentityReq{
+	req := updateUserIdentityReq{
 		token: apiutil.ExtractBearerToken(r),
 		id:    chi.URLParam(r, "id"),
 	}
@@ -375,12 +375,12 @@ func decodeUpdateClientIdentity(_ context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-func decodeUpdateClientSecret(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeUpdateUserSecret(_ context.Context, r *http.Request) (interface{}, error) {
 	if !strings.Contains(r.Header.Get("Content-Type"), api.ContentType) {
 		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
 	}
 
-	req := updateClientSecretReq{
+	req := updateUserSecretReq{
 		token: apiutil.ExtractBearerToken(r),
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -417,12 +417,12 @@ func decodePasswordReset(_ context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-func decodeUpdateClientRole(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeUpdateUserRole(_ context.Context, r *http.Request) (interface{}, error) {
 	if !strings.Contains(r.Header.Get("Content-Type"), api.ContentType) {
 		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
 	}
 
-	req := updateClientRoleReq{
+	req := updateUserRoleReq{
 		token: apiutil.ExtractBearerToken(r),
 		id:    chi.URLParam(r, "id"),
 	}
@@ -439,7 +439,7 @@ func decodeCredentials(_ context.Context, r *http.Request) (interface{}, error) 
 		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
 	}
 
-	req := loginClientReq{}
+	req := loginUserReq{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(err, errors.ErrMalformedEntity))
 	}
@@ -459,25 +459,25 @@ func decodeRefreshToken(_ context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-func decodeCreateClientReq(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeCreateUserReq(_ context.Context, r *http.Request) (interface{}, error) {
 	if !strings.Contains(r.Header.Get("Content-Type"), api.ContentType) {
 		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
 	}
 
-	var c mgclients.Client
+	var c users.User
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(err, errors.ErrMalformedEntity))
 	}
-	req := createClientReq{
-		client: c,
-		token:  apiutil.ExtractBearerToken(r),
+	req := createUserReq{
+		user:  c,
+		token: apiutil.ExtractBearerToken(r),
 	}
 
 	return req, nil
 }
 
-func decodeChangeClientStatus(_ context.Context, r *http.Request) (interface{}, error) {
-	req := changeClientStatusReq{
+func decodeChangeUserStatus(_ context.Context, r *http.Request) (interface{}, error) {
+	req := changeUserStatusReq{
 		token: apiutil.ExtractBearerToken(r),
 		id:    chi.URLParam(r, "id"),
 	}
@@ -542,6 +542,8 @@ func decodeListMembersByDomain(_ context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
+// mgclients.Page abound here.
+
 func queryPageParams(r *http.Request, defPermission string) (mgclients.Page, error) {
 	s, err := apiutil.ReadStringQuery(r, api.StatusKey, api.DefClientStatus)
 	if err != nil {
@@ -583,6 +585,9 @@ func queryPageParams(r *http.Request, defPermission string) (mgclients.Page, err
 	if err != nil {
 		return mgclients.Page{}, errors.Wrap(apiutil.ErrValidation, err)
 	}
+
+	// here's another mgclients.page
+
 	return mgclients.Page{
 		Status:     st,
 		Offset:     o,
@@ -616,13 +621,13 @@ func oauth2CallbackHandler(oauth oauth2.Provider, svc users.Service) http.Handle
 				return
 			}
 
-			client, err := oauth.UserInfo(token.AccessToken)
+			user, err := oauth.UserInfo(token.AccessToken)
 			if err != nil {
 				http.Redirect(w, r, oauth.ErrorURL()+"?error="+err.Error(), http.StatusSeeOther)
 				return
 			}
 
-			jwt, err := svc.OAuthCallback(r.Context(), client)
+			jwt, err := svc.OAuthCallback(r.Context(), user)
 			if err != nil {
 				http.Redirect(w, r, oauth.ErrorURL()+"?error="+err.Error(), http.StatusSeeOther)
 				return
