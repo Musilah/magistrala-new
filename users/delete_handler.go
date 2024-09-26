@@ -18,22 +18,21 @@ import (
 	"github.com/absmach/magistrala/auth"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
-	"github.com/absmach/magistrala/users/postgres"
 )
 
 const defLimit = uint64(100)
 
 type handler struct {
-	clients       postgres.Repository
+	users         Repository
 	policy        magistrala.PolicyServiceClient
 	checkInterval time.Duration
 	deleteAfter   time.Duration
 	logger        *slog.Logger
 }
 
-func NewDeleteHandler(ctx context.Context, clients postgres.Repository, policyClient magistrala.PolicyServiceClient, defCheckInterval, deleteAfter time.Duration, logger *slog.Logger) {
+func NewDeleteHandler(ctx context.Context, users Repository, policyClient magistrala.PolicyServiceClient, defCheckInterval, deleteAfter time.Duration, logger *slog.Logger) {
 	handler := &handler{
-		clients:       clients,
+		users:         users,
 		policy:        policyClient,
 		checkInterval: defCheckInterval,
 		deleteAfter:   deleteAfter,
@@ -59,7 +58,7 @@ func (h *handler) handle(ctx context.Context) {
 	pm := mgclients.Page{Limit: defLimit, Offset: 0, Status: mgclients.DeletedStatus}
 
 	for {
-		dbUsers, err := h.clients.RetrieveAll(ctx, pm)
+		dbUsers, err := h.users.RetrieveAll(ctx, pm)
 		if err != nil {
 			h.logger.Error("failed to retrieve users", slog.Any("error", err))
 			break
@@ -68,7 +67,7 @@ func (h *handler) handle(ctx context.Context) {
 			break
 		}
 
-		for _, u := range dbUsers.Clients {
+		for _, u := range dbUsers.Users {
 			if time.Since(u.UpdatedAt) < h.deleteAfter {
 				continue
 			}
@@ -86,7 +85,7 @@ func (h *handler) handle(ctx context.Context) {
 				continue
 			}
 
-			if err := h.clients.Delete(ctx, u.ID); err != nil {
+			if err := h.users.Delete(ctx, u.ID); err != nil {
 				h.logger.Error("failed to delete user", slog.Any("error", err))
 				continue
 			}
