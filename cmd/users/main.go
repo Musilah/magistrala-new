@@ -32,7 +32,6 @@ import (
 	jaegerclient "github.com/absmach/magistrala/pkg/jaeger"
 	"github.com/absmach/magistrala/pkg/oauth2"
 	googleoauth "github.com/absmach/magistrala/pkg/oauth2/google"
-	"github.com/absmach/magistrala/pkg/postgres"
 	pgclient "github.com/absmach/magistrala/pkg/postgres"
 	"github.com/absmach/magistrala/pkg/prometheus"
 	"github.com/absmach/magistrala/pkg/server"
@@ -219,7 +218,7 @@ func main() {
 }
 
 func newService(ctx context.Context, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
-	database := postgres.NewDatabase(db, dbConfig, tracer)
+	database := pgclient.NewDatabase(db, dbConfig, tracer)
 	cRepo := clientspg.NewRepository(database)
 	gRepo := gpostgres.New(database)
 
@@ -266,7 +265,7 @@ func newService(ctx context.Context, authClient authclient.AuthServiceClient, po
 	return csvc, gsvc, err
 }
 
-func createAdmin(ctx context.Context, c config, crepo clientspg.Repository, hsr users.Hasher, svc users.Service) (string, error) {
+func createAdmin(ctx context.Context, c config, urepo users.Repository, hsr users.Hasher, svc users.Service) (string, error) {
 	id, err := uuid.New().ID()
 	if err != nil {
 		return "", err
@@ -276,14 +275,14 @@ func createAdmin(ctx context.Context, c config, crepo clientspg.Repository, hsr 
 		return "", err
 	}
 
-	client := mgclients.Client{
+	client := users.User{
 		ID:   id,
 		Name: "admin",
-		Credentials: mgclients.Credentials{
+		Credentials: users.Credentials{
 			Identity: c.AdminEmail,
 			Secret:   hash,
 		},
-		Metadata: mgclients.Metadata{
+		Metadata: users.Metadata{
 			"role": "admin",
 		},
 		CreatedAt: time.Now(),
@@ -292,12 +291,12 @@ func createAdmin(ctx context.Context, c config, crepo clientspg.Repository, hsr 
 		Status:    mgclients.EnabledStatus,
 	}
 
-	if c, err := crepo.RetrieveByIdentity(ctx, client.Credentials.Identity); err == nil {
+	if c, err := urepo.RetrieveByIdentity(ctx, client.Credentials.Identity); err == nil {
 		return c.ID, nil
 	}
 
 	// Create an admin
-	if _, err = crepo.Save(ctx, client); err != nil {
+	if _, err = urepo.Save(ctx, client); err != nil {
 		return "", err
 	}
 	if _, err = svc.IssueToken(ctx, c.AdminEmail, c.AdminPassword, ""); err != nil {
