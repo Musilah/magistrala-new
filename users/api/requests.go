@@ -71,6 +71,22 @@ func (req viewProfileReq) validate() error {
 	return nil
 }
 
+type viewUserByUserNameReq struct {
+	token    string
+	userName string
+}
+
+func (req viewUserByUserNameReq) validate() error {
+	if req.token == "" {
+		return apiutil.ErrBearerToken
+	}
+	if req.userName == "" {
+		return apiutil.ErrMissingUserName
+	}
+
+	return nil
+}
+
 type listUsersReq struct {
 	token    string
 	status   mgclients.Status
@@ -227,6 +243,26 @@ func (req updateUserSecretReq) validate() error {
 	}
 	if !passRegex.MatchString(req.NewSecret) {
 		return apiutil.ErrPasswordFormat
+	}
+
+	return nil
+}
+
+type updateUserFullNameReq struct {
+	token    string
+	id       string
+	FullName string `json:"full_name,omitempty"`
+}
+
+func (req updateUserFullNameReq) validate() error {
+	if req.token == "" {
+		return apiutil.ErrBearerToken
+	}
+	if req.id == "" {
+		return apiutil.ErrMissingID
+	}
+	if req.FullName == "" {
+		return apiutil.ErrMissingFullName
 	}
 
 	return nil

@@ -130,6 +130,28 @@ func (lm *loggingMiddleware) ViewProfile(ctx context.Context, token string) (u u
 	return lm.svc.ViewProfile(ctx, token)
 }
 
+// ViewUserByUserName logs the view_client_by_username request. It logs the user name and the time it took to complete the request.
+// If the request fails, it logs the error.
+func (lm *loggingMiddleware) ViewUserByUserName(ctx context.Context, token, userName string) (u users.User, err error) {
+	defer func(begin time.Time) {
+		args := []any{
+			slog.String("duration", time.Since(begin).String()),
+			slog.String("user_name", userName),
+			slog.Group("user",
+				slog.String("id", u.ID),
+				slog.String("name", u.Name),
+			),
+		}
+		if err != nil {
+			args = append(args, slog.Any("error", err))
+			lm.logger.Warn("View user by username failed", args...)
+			return
+		}
+		lm.logger.Info("View user by username completed successfully", args...)
+	}(time.Now())
+	return lm.svc.ViewUserByUserName(ctx, token, userName)
+}
+
 // ListUsers logs the list_clients request. It logs the page metadata and the time it took to complete the request.
 // If the request fails, it logs the error.
 func (lm *loggingMiddleware) ListUsers(ctx context.Context, token string, pm mgclients.Page) (cp users.UsersPage, err error) {
@@ -259,6 +281,27 @@ func (lm *loggingMiddleware) UpdateUserSecret(ctx context.Context, token, oldSec
 		lm.logger.Info("Update user secret completed successfully", args...)
 	}(time.Now())
 	return lm.svc.UpdateUserSecret(ctx, token, oldSecret, newSecret)
+}
+
+// UpdateUserFullName logs the update_client_full_name request. It logs the client id and the time it took to complete the request.
+// If the request fails, it logs the error.
+func (lm *loggingMiddleware) UpdateUserFullName(ctx context.Context, token, id, fullName string) (u users.User, err error) {
+	defer func(begin time.Time) {
+		args := []any{
+			slog.String("duration", time.Since(begin).String()),
+			slog.Group("user",
+				slog.String("id", u.ID),
+				slog.String("name", u.Name),
+			),
+		}
+		if err != nil {
+			args = append(args, slog.Any("error", err))
+			lm.logger.Warn("Update user full name failed", args...)
+			return
+		}
+		lm.logger.Info("Update user full name completed successfully", args...)
+	}(time.Now())
+	return lm.svc.UpdateUserFullName(ctx, token, id, fullName)
 }
 
 // GenerateResetToken logs the generate_reset_token request. It logs the time it took to complete the request.

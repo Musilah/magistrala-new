@@ -177,6 +177,19 @@ func (svc service) ViewProfile(ctx context.Context, token string) (User, error) 
 	return user, nil
 }
 
+func (svc service) ViewUserByUserName(ctx context.Context, token, userName string) (User, error) {
+	_, err := svc.Identify(ctx, token)
+	if err != nil {
+		return User{}, err
+	}
+
+	user, err := svc.users.RetrieveByUserName(ctx, userName)
+	if err != nil {
+		return User{}, errors.Wrap(svcerr.ErrViewEntity, err)
+	}
+	return user, nil
+}
+
 func (svc service) ListUsers(ctx context.Context, token string, pm mgclients.Page) (UsersPage, error) {
 	userID, err := svc.Identify(ctx, token)
 	if err != nil {
@@ -368,6 +381,25 @@ func (svc service) UpdateUserSecret(ctx context.Context, token, oldSecret, newSe
 	}
 
 	return dbUser, nil
+}
+
+func (svc service) UpdateUserFullName(ctx context.Context, token, id, fullName string) (User, error) {
+	tokenUserID, err := svc.Identify(ctx, token)
+	if err != nil {
+		return User{}, err
+	}
+
+	if tokenUserID != id {
+		if err := svc.checkSuperAdmin(ctx, tokenUserID); err != nil {
+			return User{}, err
+		}
+	}
+
+	updatedUser, err := svc.users.UpdateUserName(ctx, id, fullName)
+	if err != nil {
+		return User{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
+	}
+	return updatedUser, nil
 }
 
 func (svc service) SendPasswordReset(_ context.Context, host, email, user, token string) error {

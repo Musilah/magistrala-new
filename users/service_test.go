@@ -40,7 +40,7 @@ var (
 		Status:      mgclients.EnabledStatus,
 	}
 	basicUser = users.User{
-		Name: "usertname",
+		Name: "usersname",
 		ID:   userID,
 	}
 	validToken      = "token"

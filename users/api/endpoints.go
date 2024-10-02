@@ -13,8 +13,6 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
-// endpoint has the service functions too. we need to change the request struct
-
 func registrationEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createUserReq)
@@ -58,6 +56,22 @@ func viewProfileEndpoint(svc users.Service) endpoint.Endpoint {
 		}
 
 		user, err := svc.ViewProfile(ctx, req.token)
+		if err != nil {
+			return nil, err
+		}
+
+		return viewUserRes{User: user}, nil
+	}
+}
+
+func viewUserByUserNameEndpoint(svc users.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(viewUserByUserNameReq)
+		if err := req.validate(); err != nil {
+			return nil, errors.Wrap(apiutil.ErrValidation, err)
+		}
+
+		user, err := svc.ViewUserByUserName(ctx, req.token, req.userName)
 		if err != nil {
 			return nil, err
 		}
@@ -319,6 +333,22 @@ func updateUserSecretEndpoint(svc users.Service) endpoint.Endpoint {
 		}
 
 		user, err := svc.UpdateUserSecret(ctx, req.token, req.OldSecret, req.NewSecret)
+		if err != nil {
+			return nil, err
+		}
+
+		return updateUserRes{User: user}, nil
+	}
+}
+
+func updateUserFullNameEndpoint(svc users.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(updateUserFullNameReq)
+		if err := req.validate(); err != nil {
+			return nil, errors.Wrap(apiutil.ErrValidation, err)
+		}
+
+		user, err := svc.UpdateUserFullName(ctx, req.token, req.id, req.FullName)
 		if err != nil {
 			return nil, err
 		}

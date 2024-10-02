@@ -25,6 +25,9 @@ type Service interface {
 	// ViewProfile retrieves user info for a given token.
 	ViewProfile(ctx context.Context, token string) (User, error)
 
+	// ViewUserByUserName retrieves user info for a given user name.
+	ViewUserByUserName(ctx context.Context, token, userName string) (User, error)
+
 	// ListUsers retrieves users list for a valid auth token.
 	ListUsers(ctx context.Context, token string, pm clients.Page) (UsersPage, error)
 
@@ -49,6 +52,9 @@ type Service interface {
 
 	// UpdateUserSecret updates the user's secret.
 	UpdateUserSecret(ctx context.Context, token, oldSecret, newSecret string) (User, error)
+
+	// UpdateUserFullName updates the user's full name.
+	UpdateUserFullName(ctx context.Context, token, id, fullName string) (User, error)
 
 	// ResetSecret change users secret in reset flow.
 	// token can be authentication token or secret reset token.

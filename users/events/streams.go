@@ -89,6 +89,15 @@ func (es *eventStore) UpdateUserSecret(ctx context.Context, token, oldSecret, ne
 	return es.update(ctx, "secret", user)
 }
 
+func (es *eventStore) UpdateUserFullName(ctx context.Context, token, id, fullName string) (users.User, error) {
+	user, err := es.svc.UpdateUserFullName(ctx, token, id, fullName)
+	if err != nil {
+		return user, err
+	}
+
+	return es.update(ctx, "full_name", user)
+}
+
 func (es *eventStore) UpdateUserIdentity(ctx context.Context, token, id, identity string) (users.User, error) {
 	user, err := es.svc.UpdateUserIdentity(ctx, token, id, identity)
 	if err != nil {
@@ -134,6 +143,23 @@ func (es *eventStore) ViewProfile(ctx context.Context, token string) (users.User
 	}
 
 	event := viewProfileEvent{
+		user,
+	}
+
+	if err := es.Publish(ctx, event); err != nil {
+		return user, err
+	}
+
+	return user, nil
+}
+
+func (es *eventStore) ViewUserByUserName(ctx context.Context, token, userName string) (users.User, error) {
+	user, err := es.svc.ViewUserByUserName(ctx, token, userName)
+	if err != nil {
+		return user, err
+	}
+
+	event := viewUserByUserNameEvent{
 		user,
 	}
 

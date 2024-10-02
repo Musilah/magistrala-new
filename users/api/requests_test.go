@@ -183,6 +183,92 @@ func TestViewProfileReqValidate(t *testing.T) {
 	}
 }
 
+func TestViewUserByUserNameReqValidate(t *testing.T) {
+	cases := []struct {
+		desc string
+		req  viewUserByUserNameReq
+		err  error
+	}{
+		{
+			desc: "valid request",
+			req: viewUserByUserNameReq{
+				token:    valid,
+				userName: name,
+			},
+			err: nil,
+		},
+		{
+			desc: "empty token",
+			req: viewUserByUserNameReq{
+				token:    "",
+				userName: name,
+			},
+			err: apiutil.ErrBearerToken,
+		},
+		{
+			desc: "empty username",
+			req: viewUserByUserNameReq{
+				token:    valid,
+				userName: "",
+			},
+			err: apiutil.ErrMissingUserName,
+		},
+	}
+	for _, c := range cases {
+		err := c.req.validate()
+		assert.Equal(t, c.err, err)
+	}
+}
+
+func TestUpdateUserFullNameReqValidate(t *testing.T) {
+	cases := []struct {
+		desc string
+		req  updateUserFullNameReq
+		err  error
+	}{
+		{
+			desc: "valid request",
+			req: updateUserFullNameReq{
+				token:    valid,
+				id:       validID,
+				FullName: valid,
+			},
+			err: nil,
+		},
+		{
+			desc: "empty token",
+			req: updateUserFullNameReq{
+				token:    "",
+				id:       validID,
+				FullName: valid,
+			},
+			err: apiutil.ErrBearerToken,
+		},
+		{
+			desc: "empty id",
+			req: updateUserFullNameReq{
+				token:    valid,
+				id:       "",
+				FullName: valid,
+			},
+			err: apiutil.ErrMissingID,
+		},
+		{
+			desc: "empty full name",
+			req: updateUserFullNameReq{
+				token:    valid,
+				id:       validID,
+				FullName: "",
+			},
+			err: apiutil.ErrMissingFullName,
+		},
+	}
+	for _, c := range cases {
+		err := c.req.validate()
+		assert.Equal(t, c.err, err)
+	}
+}
+
 func TestListUsersReqValidate(t *testing.T) {
 	cases := []struct {
 		desc string

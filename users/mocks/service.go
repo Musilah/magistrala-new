@@ -407,6 +407,34 @@ func (_m *Service) UpdateUser(ctx context.Context, token string, user users.User
 	return r0, r1
 }
 
+// UpdateUserFullName provides a mock function with given fields: ctx, token, id, fullName
+func (_m *Service) UpdateUserFullName(ctx context.Context, token string, id string, fullName string) (users.User, error) {
+	ret := _m.Called(ctx, token, id, fullName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateUserFullName")
+	}
+
+	var r0 users.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (users.User, error)); ok {
+		return rf(ctx, token, id, fullName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) users.User); ok {
+		r0 = rf(ctx, token, id, fullName)
+	} else {
+		r0 = ret.Get(0).(users.User)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, token, id, fullName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UpdateUserIdentity provides a mock function with given fields: ctx, token, id, identity
 func (_m *Service) UpdateUserIdentity(ctx context.Context, token string, id string, identity string) (users.User, error) {
 	ret := _m.Called(ctx, token, id, identity)
@@ -568,6 +596,34 @@ func (_m *Service) ViewUser(ctx context.Context, token string, id string) (users
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, token, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ViewUserByUserName provides a mock function with given fields: ctx, token, userName
+func (_m *Service) ViewUserByUserName(ctx context.Context, token string, userName string) (users.User, error) {
+	ret := _m.Called(ctx, token, userName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ViewUserByUserName")
+	}
+
+	var r0 users.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (users.User, error)); ok {
+		return rf(ctx, token, userName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) users.User); ok {
+		r0 = rf(ctx, token, userName)
+	} else {
+		r0 = ret.Get(0).(users.User)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, token, userName)
 	} else {
 		r1 = ret.Error(1)
 	}

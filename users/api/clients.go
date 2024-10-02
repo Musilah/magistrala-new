@@ -48,6 +48,13 @@ func usersHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *regexp
 			opts...,
 		), "view_profile").ServeHTTP)
 
+		r.Get("/username", otelhttp.NewHandler(kithttp.NewServer(
+			viewUserByUserNameEndpoint(svc),
+			decodeViewUserByUserName,
+			api.EncodeResponse,
+			opts...,
+		), "view_client_by_username").ServeHTTP)
+
 		r.Get("/{id}", otelhttp.NewHandler(kithttp.NewServer(
 			viewUserEndpoint(svc),
 			decodeViewUser,
@@ -75,6 +82,13 @@ func usersHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *regexp
 			api.EncodeResponse,
 			opts...,
 		), "update_client_secret").ServeHTTP)
+
+		r.Patch("/{id}/full-name", otelhttp.NewHandler(kithttp.NewServer(
+			updateUserFullNameEndpoint(svc),
+			deecodeUpdateUserFullName,
+			api.EncodeResponse,
+			opts...,
+		), "update_client_full_name").ServeHTTP)
 
 		r.Patch("/{id}", otelhttp.NewHandler(kithttp.NewServer(
 			updateUserEndpoint(svc),
@@ -212,6 +226,15 @@ func decodeViewUser(_ context.Context, r *http.Request) (interface{}, error) {
 
 func decodeViewProfile(_ context.Context, r *http.Request) (interface{}, error) {
 	req := viewProfileReq{token: apiutil.ExtractBearerToken(r)}
+
+	return req, nil
+}
+
+func decodeViewUserByUserName(_ context.Context, r *http.Request) (interface{}, error) {
+	req := viewUserByUserNameReq{
+		token:    apiutil.ExtractBearerToken(r),
+		userName: chi.URLParam(r, "userName"),
+	}
 
 	return req, nil
 }
@@ -390,6 +413,22 @@ func decodeUpdateUserSecret(_ context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
+func deecodeUpdateUserFullName(_ context.Context, r *http.Request) (interface{}, error) {
+	if !strings.Contains(r.Header.Get("Content-Type"), api.ContentType) {
+		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
+	}
+
+	req := updateUserFullNameReq{
+		token: apiutil.ExtractBearerToken(r),
+		id:    chi.URLParam(r, "id"),
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(err, errors.ErrMalformedEntity))
+	}
+
+	return req, nil
+}
+
 func decodePasswordResetRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	if !strings.Contains(r.Header.Get("Content-Type"), api.ContentType) {
 		return nil, apiutil.ErrUnsupportedContentType
@@ -541,8 +580,6 @@ func decodeListMembersByDomain(_ context.Context, r *http.Request) (interface{},
 
 	return req, nil
 }
-
-// mgclients.Page abound here.
 
 func queryPageParams(r *http.Request, defPermission string) (mgclients.Page, error) {
 	s, err := apiutil.ReadStringQuery(r, api.StatusKey, api.DefClientStatus)
