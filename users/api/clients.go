@@ -83,12 +83,19 @@ func usersHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *regexp
 			opts...,
 		), "update_client_secret").ServeHTTP)
 
-		r.Patch("/{id}/full-name", otelhttp.NewHandler(kithttp.NewServer(
-			updateUserFullNameEndpoint(svc),
-			deecodeUpdateUserFullName,
+		r.Patch("/{id}/names", otelhttp.NewHandler(kithttp.NewServer(
+			updateUserNamesEndpoint(svc),
+			decodeUpdateUserNames,
 			api.EncodeResponse,
 			opts...,
-		), "update_client_full_name").ServeHTTP)
+		), "update_client_names").ServeHTTP)
+
+		r.Patch("/{id}/picture", otelhttp.NewHandler(kithttp.NewServer(
+			updateProfilePictureEndpoint(svc),
+			decodeUpdateUserProfilePicture,
+			api.EncodeResponse,
+			opts...,
+		), "update_profile_picture").ServeHTTP)
 
 		r.Patch("/{id}", otelhttp.NewHandler(kithttp.NewServer(
 			updateUserEndpoint(svc),
@@ -233,7 +240,7 @@ func decodeViewProfile(_ context.Context, r *http.Request) (interface{}, error) 
 func decodeViewUserByUserName(_ context.Context, r *http.Request) (interface{}, error) {
 	req := viewUserByUserNameReq{
 		token:    apiutil.ExtractBearerToken(r),
-		userName: chi.URLParam(r, "userName"),
+		UserName: chi.URLParam(r, "userName"),
 	}
 
 	return req, nil
@@ -413,15 +420,36 @@ func decodeUpdateUserSecret(_ context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-func deecodeUpdateUserFullName(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeUpdateUserNames(_ context.Context, r *http.Request) (interface{}, error) {
 	if !strings.Contains(r.Header.Get("Content-Type"), api.ContentType) {
 		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
 	}
 
-	req := updateUserFullNameReq{
+	var c users.User
+
+	req := updateUserNamesReq{
 		token: apiutil.ExtractBearerToken(r),
-		id:    chi.URLParam(r, "id"),
+		User:  c,
 	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(err, errors.ErrMalformedEntity))
+	}
+
+	return req, nil
+}
+
+func decodeUpdateUserProfilePicture(_ context.Context, r *http.Request) (interface{}, error) {
+	if !strings.Contains(r.Header.Get("Content-Type"), api.ContentType) {
+		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
+	}
+
+	var c users.User
+
+	req := updateProfilePictureReq{
+		token: apiutil.ExtractBearerToken(r),
+		User:  c,
+	}
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(err, errors.ErrMalformedEntity))
 	}

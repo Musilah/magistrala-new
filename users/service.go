@@ -5,6 +5,7 @@ package users
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/absmach/magistrala"
@@ -61,6 +62,10 @@ func (svc service) RegisterUser(ctx context.Context, token string, user User) (u
 	clientID, err := svc.idProvider.ID()
 	if err != nil {
 		return User{}, err
+	}
+
+	if user.FirstName != "" || user.LastName != "" {
+		user.Name = fmt.Sprintf("%s %s", user.FirstName, user.LastName)
 	}
 
 	if user.Credentials.Secret != "" {
@@ -383,19 +388,53 @@ func (svc service) UpdateUserSecret(ctx context.Context, token, oldSecret, newSe
 	return dbUser, nil
 }
 
-func (svc service) UpdateUserFullName(ctx context.Context, token, id, fullName string) (User, error) {
+func (svc service) UpdateUserNames(ctx context.Context, token string, usr User) (User, error) {
 	tokenUserID, err := svc.Identify(ctx, token)
 	if err != nil {
 		return User{}, err
 	}
 
-	if tokenUserID != id {
+	if tokenUserID != usr.ID {
 		if err := svc.checkSuperAdmin(ctx, tokenUserID); err != nil {
 			return User{}, err
 		}
 	}
 
-	updatedUser, err := svc.users.UpdateUserName(ctx, id, fullName)
+	if usr.FirstName == "" || usr.LastName == "" {
+		return User{}, errors.Wrap(svcerr.ErrMalformedEntity, svcerr.ErrMissingNames)
+	}
+
+	usr.Name = fmt.Sprintf("%s %s", usr.FirstName, usr.LastName)
+	usr.UpdatedAt = time.Now()
+	usr.UpdatedBy = tokenUserID
+
+	updatedUser, err := svc.users.UpdateUserNames(ctx, usr)
+	if err != nil {
+		return User{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
+	}
+	return updatedUser, nil
+}
+
+func (svc service) UpdateProfilePicture(ctx context.Context, token string, usr User) (User, error) {
+	tokenUserID, err := svc.Identify(ctx, token)
+	if err != nil {
+		return User{}, err
+	}
+
+	if tokenUserID != usr.ID {
+		if err := svc.checkSuperAdmin(ctx, tokenUserID); err != nil {
+			return User{}, err
+		}
+	}
+
+	if usr.ProfilePicture == "" {
+		return User{}, errors.Wrap(svcerr.ErrMalformedEntity, svcerr.ErrMissingProfilePicture)
+	}
+
+	usr.UpdatedAt = time.Now()
+	usr.UpdatedBy = tokenUserID
+
+	updatedUser, err := svc.users.UpdateProfilePicture(ctx, usr)
 	if err != nil {
 		return User{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}

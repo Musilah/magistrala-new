@@ -11,26 +11,26 @@ import (
 	"github.com/absmach/magistrala/users"
 )
 
-// how do i split this from clients completely?
-
 const (
-	clientPrefix       = "user."
-	clientCreate       = clientPrefix + "create"
-	clientUpdate       = clientPrefix + "update"
-	clientRemove       = clientPrefix + "remove"
-	clientView         = clientPrefix + "view"
-	profileView        = clientPrefix + "view_profile"
-	clientList         = clientPrefix + "list"
-	clientSearch       = clientPrefix + "search"
-	clientListByGroup  = clientPrefix + "list_by_group"
-	clientIdentify     = clientPrefix + "identify"
-	generateResetToken = clientPrefix + "generate_reset_token"
-	issueToken         = clientPrefix + "issue_token"
-	refreshToken       = clientPrefix + "refresh_token"
-	resetSecret        = clientPrefix + "reset_secret"
-	sendPasswordReset  = clientPrefix + "send_password_reset"
-	oauthCallback      = clientPrefix + "oauth_callback"
-	deleteClient       = clientPrefix + "delete"
+	clientPrefix               = "user."
+	clientCreate               = clientPrefix + "create"
+	clientUpdate               = clientPrefix + "update"
+	clientRemove               = clientPrefix + "remove"
+	clientView                 = clientPrefix + "view"
+	profileView                = clientPrefix + "view_profile"
+	clientList                 = clientPrefix + "list"
+	clientSearch               = clientPrefix + "search"
+	clientListByGroup          = clientPrefix + "list_by_group"
+	clientIdentify             = clientPrefix + "identify"
+	generateResetToken         = clientPrefix + "generate_reset_token"
+	issueToken                 = clientPrefix + "issue_token"
+	refreshToken               = clientPrefix + "refresh_token"
+	resetSecret                = clientPrefix + "reset_secret"
+	sendPasswordReset          = clientPrefix + "send_password_reset"
+	oauthCallback              = clientPrefix + "oauth_callback"
+	deleteClient               = clientPrefix + "delete"
+	clientUpdateUserNames      = clientPrefix + "update_user_names"
+	clientUpdateProfilePicture = clientPrefix + "update_profile_picture"
 )
 
 var (
@@ -115,6 +115,58 @@ func (uce updateUserEvent) Encode() (map[string]interface{}, error) {
 	}
 	if uce.Status.String() != "" {
 		val["status"] = uce.Status.String()
+	}
+
+	return val, nil
+}
+
+type updateUserNamesEvent struct {
+	users.User
+}
+
+func (une updateUserNamesEvent) Encode() (map[string]interface{}, error) {
+	val := map[string]interface{}{
+		"operation":  clientUpdateUserNames,
+		"updated_at": une.UpdatedAt,
+		"updated_by": une.UpdatedBy,
+	}
+
+	if une.ID != "" {
+		val["id"] = une.ID
+	}
+	if une.Name != "" {
+		val["name"] = une.Name
+	}
+	// should these be in separate events?
+	if une.FirstName != "" {
+		val["first_name"] = une.FirstName
+	}
+	if une.LastName != "" {
+		val["last_name"] = une.LastName
+	}
+	if une.UserName != "" {
+		val["user_name"] = une.UserName
+	}
+
+	return val, nil
+}
+
+type updateProfilePictureEvent struct {
+	users.User
+}
+
+func (uppe updateProfilePictureEvent) Encode() (map[string]interface{}, error) {
+	val := map[string]interface{}{
+		"operation":  clientUpdateProfilePicture,
+		"updated_at": uppe.UpdatedAt,
+		"updated_by": uppe.UpdatedBy,
+	}
+
+	if uppe.ID != "" {
+		val["id"] = uppe.ID
+	}
+	if uppe.ProfilePicture != "" {
+		val["profile_picture"] = uppe.ProfilePicture
 	}
 
 	return val, nil

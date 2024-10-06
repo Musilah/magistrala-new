@@ -139,12 +139,21 @@ func (ms *metricsMiddleware) UpdateUserSecret(ctx context.Context, token, oldSec
 }
 
 // UpdateUserFullName instruments UpdateUserFullName method with metrics.
-func (ms *metricsMiddleware) UpdateUserFullName(ctx context.Context, token, id, fullName string) (users.User, error) {
+func (ms *metricsMiddleware) UpdateUserNames(ctx context.Context, token string, user users.User) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "update_client_full_name").Add(1)
-		ms.latency.With("method", "update_client_full_name").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "update_client_names").Add(1)
+		ms.latency.With("method", "update_client_names").Observe(time.Since(begin).Seconds())
 	}(time.Now())
-	return ms.svc.UpdateUserFullName(ctx, token, id, fullName)
+	return ms.svc.UpdateUserNames(ctx, token, user)
+}
+
+// UpdateProfilePicture instruments UpdateProfilePicture method with metrics.
+func (ms *metricsMiddleware) UpdateProfilePicture(ctx context.Context, token string, user users.User) (users.User, error) {
+	defer func(begin time.Time) {
+		ms.counter.With("method", "update_profile_picture").Add(1)
+		ms.latency.With("method", "update_profile_picture").Observe(time.Since(begin).Seconds())
+	}(time.Now())
+	return ms.svc.UpdateProfilePicture(ctx, token, user)
 }
 
 // GenerateResetToken instruments GenerateResetToken method with metrics.

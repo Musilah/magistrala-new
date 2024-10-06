@@ -4,9 +4,6 @@
 // Package main contains users main function to start the users service.
 package main
 
-// this will have the google cloud storage files i guess
-// this is also what is supposed to start the users service and I currently cant start that service
-
 import (
 	"context"
 	"fmt"
@@ -46,6 +43,7 @@ import (
 	uevents "github.com/absmach/magistrala/users/events"
 	"github.com/absmach/magistrala/users/hasher"
 	clientspg "github.com/absmach/magistrala/users/postgres"
+	"github.com/absmach/magistrala/users/storage"
 
 	ctracing "github.com/absmach/magistrala/users/tracing"
 	"github.com/caarlos0/env/v11"
@@ -223,7 +221,11 @@ func main() {
 
 func newService(ctx context.Context, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
 	database := pgclient.NewDatabase(db, dbConfig, tracer)
-	cRepo := clientspg.NewRepository(database)
+	storageClient, err := storage.NewStorageClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+	cRepo := clientspg.NewRepository(database, storageClient)
 	gRepo := gpostgres.New(database)
 
 	idp := uuid.New()

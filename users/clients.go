@@ -53,8 +53,11 @@ type Service interface {
 	// UpdateUserSecret updates the user's secret.
 	UpdateUserSecret(ctx context.Context, token, oldSecret, newSecret string) (User, error)
 
-	// UpdateUserFullName updates the user's full name.
-	UpdateUserFullName(ctx context.Context, token, id, fullName string) (User, error)
+	// UpdateUserNames updates the user's names.
+	UpdateUserNames(ctx context.Context, token string, usr User) (User, error)
+
+	// UpdateProfilePicture updates the user's profile picture.
+	UpdateProfilePicture(ctx context.Context, token string, usr User) (User, error)
 
 	// ResetSecret change users secret in reset flow.
 	// token can be authentication token or secret reset token.

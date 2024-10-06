@@ -379,6 +379,34 @@ func (_m *Service) SendPasswordReset(ctx context.Context, host string, email str
 	return r0
 }
 
+// UpdateProfilePicture provides a mock function with given fields: ctx, token, usr
+func (_m *Service) UpdateProfilePicture(ctx context.Context, token string, usr users.User) (users.User, error) {
+	ret := _m.Called(ctx, token, usr)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateProfilePicture")
+	}
+
+	var r0 users.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, users.User) (users.User, error)); ok {
+		return rf(ctx, token, usr)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, users.User) users.User); ok {
+		r0 = rf(ctx, token, usr)
+	} else {
+		r0 = ret.Get(0).(users.User)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, users.User) error); ok {
+		r1 = rf(ctx, token, usr)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UpdateUser provides a mock function with given fields: ctx, token, user
 func (_m *Service) UpdateUser(ctx context.Context, token string, user users.User) (users.User, error) {
 	ret := _m.Called(ctx, token, user)
@@ -407,34 +435,6 @@ func (_m *Service) UpdateUser(ctx context.Context, token string, user users.User
 	return r0, r1
 }
 
-// UpdateUserFullName provides a mock function with given fields: ctx, token, id, fullName
-func (_m *Service) UpdateUserFullName(ctx context.Context, token string, id string, fullName string) (users.User, error) {
-	ret := _m.Called(ctx, token, id, fullName)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateUserFullName")
-	}
-
-	var r0 users.User
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (users.User, error)); ok {
-		return rf(ctx, token, id, fullName)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) users.User); ok {
-		r0 = rf(ctx, token, id, fullName)
-	} else {
-		r0 = ret.Get(0).(users.User)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, token, id, fullName)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // UpdateUserIdentity provides a mock function with given fields: ctx, token, id, identity
 func (_m *Service) UpdateUserIdentity(ctx context.Context, token string, id string, identity string) (users.User, error) {
 	ret := _m.Called(ctx, token, id, identity)
@@ -456,6 +456,34 @@ func (_m *Service) UpdateUserIdentity(ctx context.Context, token string, id stri
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, token, id, identity)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UpdateUserNames provides a mock function with given fields: ctx, token, usr
+func (_m *Service) UpdateUserNames(ctx context.Context, token string, usr users.User) (users.User, error) {
+	ret := _m.Called(ctx, token, usr)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateUserNames")
+	}
+
+	var r0 users.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, users.User) (users.User, error)); ok {
+		return rf(ctx, token, usr)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, users.User) users.User); ok {
+		r0 = rf(ctx, token, usr)
+	} else {
+		r0 = ret.Get(0).(users.User)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, users.User) error); ok {
+		r1 = rf(ctx, token, usr)
 	} else {
 		r1 = ret.Error(1)
 	}

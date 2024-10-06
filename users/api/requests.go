@@ -73,14 +73,14 @@ func (req viewProfileReq) validate() error {
 
 type viewUserByUserNameReq struct {
 	token    string
-	userName string
+	UserName string
 }
 
 func (req viewUserByUserNameReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
-	if req.userName == "" {
+	if req.UserName == "" {
 		return apiutil.ErrMissingUserName
 	}
 
@@ -95,7 +95,7 @@ type listUsersReq struct {
 	name     string
 	tag      string
 	identity string
-	metadata mgclients.Metadata // this is a hanging fix for now. using mgclients.page instead of users.page
+	metadata mgclients.Metadata
 	order    string
 	dir      string
 	id       string
@@ -248,21 +248,46 @@ func (req updateUserSecretReq) validate() error {
 	return nil
 }
 
-type updateUserFullNameReq struct {
-	token    string
-	id       string
-	FullName string `json:"full_name,omitempty"`
+type updateUserNamesReq struct {
+	token string
+	User  users.User
 }
 
-func (req updateUserFullNameReq) validate() error {
+func (req updateUserNamesReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
-	if req.id == "" {
+	if req.User.ID == "" {
 		return apiutil.ErrMissingID
 	}
-	if req.FullName == "" {
-		return apiutil.ErrMissingFullName
+	if len(req.User.Name) > api.MaxNameSize {
+		return apiutil.ErrNameSize
+	}
+	if len(req.User.UserName) > api.MaxNameSize {
+		return apiutil.ErrNameSize
+	}
+	if len(req.User.FirstName) > api.MaxNameSize {
+		return apiutil.ErrNameSize
+	}
+	if len(req.User.LastName) > api.MaxNameSize {
+		return apiutil.ErrNameSize
+	}
+
+	return nil
+}
+
+type updateProfilePictureReq struct {
+	token string
+	User  users.User
+}
+
+func (req updateProfilePictureReq) validate() error {
+	if req.token == "" {
+		return apiutil.ErrBearerToken
+	}
+
+	if req.User.ID == "" {
+		return apiutil.ErrMissingID
 	}
 
 	return nil

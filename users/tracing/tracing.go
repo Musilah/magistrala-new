@@ -123,14 +123,26 @@ func (tm *tracingMiddleware) UpdateUserSecret(ctx context.Context, token, oldSec
 }
 
 // UpdateUserFullName traces the "UpdateUserFullName" operation of the wrapped users.Service.
-func (tm *tracingMiddleware) UpdateUserFullName(ctx context.Context, token, id, fullName string) (users.User, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_update_client_full_name", trace.WithAttributes(
-		attribute.String("id", id),
-		attribute.String("full_name", fullName),
+func (tm *tracingMiddleware) UpdateUserNames(ctx context.Context, token string, user users.User) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_update_client_names", trace.WithAttributes(
+		attribute.String("id", user.ID),
+		attribute.String("name", user.Name),
+		attribute.String("fisrt_name", user.FirstName),
+		attribute.String("last_name", user.LastName),
+		attribute.String("user_name", user.UserName),
+		attribute.String("name", user.Name),
 	))
 	defer span.End()
 
-	return tm.svc.UpdateUserFullName(ctx, token, id, fullName)
+	return tm.svc.UpdateUserNames(ctx, token, user)
+}
+
+// UpdateProfilePicture traces the "UpdateProfilePicture" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) UpdateProfilePicture(ctx context.Context, token string, usr users.User) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_update_profile_picture", trace.WithAttributes(attribute.String("id", usr.ID)))
+	defer span.End()
+
+	return tm.svc.UpdateProfilePicture(ctx, token, usr)
 }
 
 // GenerateResetToken traces the "GenerateResetToken" operation of the wrapped users.Service.

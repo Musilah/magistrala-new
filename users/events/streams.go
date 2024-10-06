@@ -89,13 +89,38 @@ func (es *eventStore) UpdateUserSecret(ctx context.Context, token, oldSecret, ne
 	return es.update(ctx, "secret", user)
 }
 
-func (es *eventStore) UpdateUserFullName(ctx context.Context, token, id, fullName string) (users.User, error) {
-	user, err := es.svc.UpdateUserFullName(ctx, token, id, fullName)
+func (es *eventStore) UpdateUserNames(ctx context.Context, token string, user users.User) (users.User, error) {
+	user, err := es.svc.UpdateUserNames(ctx, token, user)
 	if err != nil {
 		return user, err
 	}
 
-	return es.update(ctx, "full_name", user)
+	event := updateUserNamesEvent{
+		user,
+	}
+
+	if err := es.Publish(ctx, event); err != nil {
+		return user, err
+	}
+
+	return user, nil
+}
+
+func (es *eventStore) UpdateProfilePicture(ctx context.Context, token string, user users.User) (users.User, error) {
+	user, err := es.svc.UpdateProfilePicture(ctx, token, user)
+	if err != nil {
+		return user, err
+	}
+
+	event := updateProfilePictureEvent{
+		user,
+	}
+
+	if err := es.Publish(ctx, event); err != nil {
+		return user, err
+	}
+
+	return user, nil
 }
 
 func (es *eventStore) UpdateUserIdentity(ctx context.Context, token, id, identity string) (users.User, error) {

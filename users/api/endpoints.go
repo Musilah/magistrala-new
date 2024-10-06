@@ -71,7 +71,7 @@ func viewUserByUserNameEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		user, err := svc.ViewUserByUserName(ctx, req.token, req.userName)
+		user, err := svc.ViewUserByUserName(ctx, req.token, req.UserName)
 		if err != nil {
 			return nil, err
 		}
@@ -341,14 +341,30 @@ func updateUserSecretEndpoint(svc users.Service) endpoint.Endpoint {
 	}
 }
 
-func updateUserFullNameEndpoint(svc users.Service) endpoint.Endpoint {
+func updateUserNamesEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(updateUserFullNameReq)
+		req := request.(updateUserNamesReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		user, err := svc.UpdateUserFullName(ctx, req.token, req.id, req.FullName)
+		user, err := svc.UpdateUserNames(ctx, req.token, req.User)
+		if err != nil {
+			return nil, err
+		}
+
+		return updateUserRes{User: user}, nil
+	}
+}
+
+func updateProfilePictureEndpoint(svc users.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(updateProfilePictureReq)
+		if err := req.validate(); err != nil {
+			return nil, errors.Wrap(apiutil.ErrValidation, err)
+		}
+
+		user, err := svc.UpdateProfilePicture(ctx, req.token, req.User)
 		if err != nil {
 			return nil, err
 		}
