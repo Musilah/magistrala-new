@@ -80,10 +80,6 @@ func (pa *policyAgent) CheckPolicy(ctx context.Context, pr auth.PolicyReq) error
 	return svcerr.ErrAuthorization
 }
 
-// this is failing make run up. how is it connected and how do i fix that
-// there is an issue with the SubjectReference.Object as its apparently not set right
-// and this error as well:  invalid WriteRelationshipsRequest.Updates[0]: embedded message failed validation
-
 func (pa *policyAgent) AddPolicies(ctx context.Context, prs []auth.PolicyReq) error {
 	updates := []*v1.RelationshipUpdate{}
 	var preconds []*v1.Precondition
