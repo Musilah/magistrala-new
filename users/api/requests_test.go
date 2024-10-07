@@ -193,7 +193,7 @@ func TestViewUserByUserNameReqValidate(t *testing.T) {
 			desc: "valid request",
 			req: viewUserByUserNameReq{
 				token:    valid,
-				UserName: name,
+				userName: name,
 			},
 			err: nil,
 		},
@@ -201,7 +201,7 @@ func TestViewUserByUserNameReqValidate(t *testing.T) {
 			desc: "empty token",
 			req: viewUserByUserNameReq{
 				token:    "",
-				UserName: name,
+				userName: name,
 			},
 			err: apiutil.ErrBearerToken,
 		},
@@ -209,7 +209,7 @@ func TestViewUserByUserNameReqValidate(t *testing.T) {
 			desc: "empty username",
 			req: viewUserByUserNameReq{
 				token:    valid,
-				UserName: "",
+				userName: "",
 			},
 			err: apiutil.ErrMissingUserName,
 		},

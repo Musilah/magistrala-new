@@ -71,7 +71,7 @@ func viewUserByUserNameEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		user, err := svc.ViewUserByUserName(ctx, req.token, req.UserName)
+		user, err := svc.ViewUserByUserName(ctx, req.token, req.userName)
 		if err != nil {
 			return nil, err
 		}
@@ -364,7 +364,12 @@ func updateProfilePictureEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		user, err := svc.UpdateProfilePicture(ctx, req.token, req.User)
+		user := users.User{
+			ID:             req.id,
+			ProfilePicture: req.ProfilePicture,
+		}
+
+		user, err := svc.UpdateProfilePicture(ctx, req.token, user)
 		if err != nil {
 			return nil, err
 		}
@@ -445,7 +450,7 @@ func enableUserEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		return changeUserStatusClientRes{User: user}, nil
+		return changeUserStatusRes{User: user}, nil
 	}
 }
 
@@ -461,7 +466,7 @@ func disableUserEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		return changeUserStatusClientRes{User: user}, nil
+		return changeUserStatusRes{User: user}, nil
 	}
 }
 

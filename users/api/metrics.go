@@ -33,8 +33,8 @@ func MetricsMiddleware(svc users.Service, counter metrics.Counter, latency metri
 // RegisterUser instruments RegisterUser method with metrics.
 func (ms *metricsMiddleware) RegisterUser(ctx context.Context, token string, user users.User) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "register_client").Add(1)
-		ms.latency.With("method", "register_client").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "register_user").Add(1)
+		ms.latency.With("method", "register_user").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.RegisterUser(ctx, token, user)
 }
@@ -57,11 +57,11 @@ func (ms *metricsMiddleware) RefreshToken(ctx context.Context, refreshToken, dom
 	return ms.svc.RefreshToken(ctx, refreshToken, domainID)
 }
 
-// ViewUser instruments ViewClient method with metrics.
+// ViewUser instruments ViewUser method with metrics.
 func (ms *metricsMiddleware) ViewUser(ctx context.Context, token, id string) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "view_client").Add(1)
-		ms.latency.With("method", "view_client").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "view_user").Add(1)
+		ms.latency.With("method", "view_user").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.ViewUser(ctx, token, id)
 }
@@ -78,8 +78,8 @@ func (ms *metricsMiddleware) ViewProfile(ctx context.Context, token string) (use
 // ViewUserByUserName instruments ViewUserByUserName method with metrics.
 func (ms *metricsMiddleware) ViewUserByUserName(ctx context.Context, token, userName string) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "view_client_by_username").Add(1)
-		ms.latency.With("method", "view_client_by_username").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "view_user_by_username").Add(1)
+		ms.latency.With("method", "view_user_by_username").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.ViewUserByUserName(ctx, token, userName)
 }
@@ -87,8 +87,8 @@ func (ms *metricsMiddleware) ViewUserByUserName(ctx context.Context, token, user
 // ListUsers instruments ListUsers method with metrics.
 func (ms *metricsMiddleware) ListUsers(ctx context.Context, token string, pm mgclients.Page) (users.UsersPage, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "list_clients").Add(1)
-		ms.latency.With("method", "list_clients").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "list_users").Add(1)
+		ms.latency.With("method", "list_users").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.ListUsers(ctx, token, pm)
 }
@@ -105,8 +105,8 @@ func (ms *metricsMiddleware) SearchUsers(ctx context.Context, token string, pm m
 // UpdateUser instruments UpdateUser method with metrics.
 func (ms *metricsMiddleware) UpdateUser(ctx context.Context, token string, user users.User) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "update_client_name_and_metadata").Add(1)
-		ms.latency.With("method", "update_client_name_and_metadata").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "update_user_name_and_metadata").Add(1)
+		ms.latency.With("method", "update_user_name_and_metadata").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.UpdateUser(ctx, token, user)
 }
@@ -114,8 +114,8 @@ func (ms *metricsMiddleware) UpdateUser(ctx context.Context, token string, user 
 // UpdateUsertTags instruments UpdateCUserTags method with metrics.
 func (ms *metricsMiddleware) UpdateUserTags(ctx context.Context, token string, user users.User) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "update_client_tags").Add(1)
-		ms.latency.With("method", "update_client_tags").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "update_user_tags").Add(1)
+		ms.latency.With("method", "update_user_tags").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.UpdateUserTags(ctx, token, user)
 }
@@ -123,8 +123,8 @@ func (ms *metricsMiddleware) UpdateUserTags(ctx context.Context, token string, u
 // UpdateuserIdentity instruments UpdateUserIdentity method with metrics.
 func (ms *metricsMiddleware) UpdateUserIdentity(ctx context.Context, token, id, identity string) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "update_client_identity").Add(1)
-		ms.latency.With("method", "update_client_identity").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "update_user_identity").Add(1)
+		ms.latency.With("method", "update_user_identity").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.UpdateUserIdentity(ctx, token, id, identity)
 }
@@ -132,17 +132,17 @@ func (ms *metricsMiddleware) UpdateUserIdentity(ctx context.Context, token, id, 
 // UpdateUserecret instruments UpdateUserSecret method with metrics.
 func (ms *metricsMiddleware) UpdateUserSecret(ctx context.Context, token, oldSecret, newSecret string) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "update_client_secret").Add(1)
-		ms.latency.With("method", "update_client_secret").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "update_user_secret").Add(1)
+		ms.latency.With("method", "update_user_secret").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.UpdateUserSecret(ctx, token, oldSecret, newSecret)
 }
 
-// UpdateUserFullName instruments UpdateUserFullName method with metrics.
+// UpdateUserNames instruments UpdateUserNames method with metrics.
 func (ms *metricsMiddleware) UpdateUserNames(ctx context.Context, token string, user users.User) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "update_client_names").Add(1)
-		ms.latency.With("method", "update_client_names").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "update_user_names").Add(1)
+		ms.latency.With("method", "update_user_names").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.UpdateUserNames(ctx, token, user)
 }
@@ -186,8 +186,8 @@ func (ms *metricsMiddleware) SendPasswordReset(ctx context.Context, host, email,
 // UpdateUserRole instruments UpdateUserRole method with metrics.
 func (ms *metricsMiddleware) UpdateUserRole(ctx context.Context, token string, user users.User) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "update_client_role").Add(1)
-		ms.latency.With("method", "update_client_role").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "update_user_role").Add(1)
+		ms.latency.With("method", "update_user_role").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.UpdateUserRole(ctx, token, user)
 }
@@ -195,8 +195,8 @@ func (ms *metricsMiddleware) UpdateUserRole(ctx context.Context, token string, u
 // EnableUser instruments EnableUser method with metrics.
 func (ms *metricsMiddleware) EnableUser(ctx context.Context, token, id string) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "enable_client").Add(1)
-		ms.latency.With("method", "enable_client").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "enable_user").Add(1)
+		ms.latency.With("method", "enable_user").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.EnableUser(ctx, token, id)
 }
@@ -204,8 +204,8 @@ func (ms *metricsMiddleware) EnableUser(ctx context.Context, token, id string) (
 // DisableUser instruments DisableUser method with metrics.
 func (ms *metricsMiddleware) DisableUser(ctx context.Context, token, id string) (users.User, error) {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "disable_client").Add(1)
-		ms.latency.With("method", "disable_client").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "disable_user").Add(1)
+		ms.latency.With("method", "disable_user").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.DisableUser(ctx, token, id)
 }
@@ -228,19 +228,19 @@ func (ms *metricsMiddleware) Identify(ctx context.Context, token string) (string
 	return ms.svc.Identify(ctx, token)
 }
 
-func (ms *metricsMiddleware) OAuthCallback(ctx context.Context, client users.User) (*magistrala.Token, error) {
+func (ms *metricsMiddleware) OAuthCallback(ctx context.Context, user users.User) (*magistrala.Token, error) {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "oauth_callback").Add(1)
 		ms.latency.With("method", "oauth_callback").Observe(time.Since(begin).Seconds())
 	}(time.Now())
-	return ms.svc.OAuthCallback(ctx, client)
+	return ms.svc.OAuthCallback(ctx, user)
 }
 
-// DeleteClient instruments DeleteClient method with metrics.
+// DeleteUser instruments DeleteUser method with metrics.
 func (ms *metricsMiddleware) DeleteUser(ctx context.Context, token, id string) error {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "delete_client").Add(1)
-		ms.latency.With("method", "delete_client").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "delete_user").Add(1)
+		ms.latency.With("method", "delete_user").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.DeleteUser(ctx, token, id)
 }

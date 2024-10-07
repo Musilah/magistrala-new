@@ -25,7 +25,7 @@ import (
 
 var passRegex = regexp.MustCompile("^.{8,}$")
 
-// MakeHandler returns a HTTP handler for API endpoints.
+// UsersHandler returns a HTTP handler for API endpoints.
 func usersHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *regexp.Regexp, providers ...oauth2.Provider) http.Handler {
 	passRegex = pr
 
@@ -39,7 +39,7 @@ func usersHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *regexp
 			decodeCreateUserReq,
 			api.EncodeResponse,
 			opts...,
-		), "register_client").ServeHTTP)
+		), "register_user").ServeHTTP)
 
 		r.Get("/profile", otelhttp.NewHandler(kithttp.NewServer(
 			viewProfileEndpoint(svc),
@@ -53,42 +53,42 @@ func usersHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *regexp
 			decodeViewUserByUserName,
 			api.EncodeResponse,
 			opts...,
-		), "view_client_by_username").ServeHTTP)
+		), "view_user_by_username").ServeHTTP)
 
 		r.Get("/{id}", otelhttp.NewHandler(kithttp.NewServer(
 			viewUserEndpoint(svc),
 			decodeViewUser,
 			api.EncodeResponse,
 			opts...,
-		), "view_client").ServeHTTP)
+		), "view_user").ServeHTTP)
 
 		r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
 			listUsersEndpoint(svc),
 			decodeListUsers,
 			api.EncodeResponse,
 			opts...,
-		), "list_clients").ServeHTTP)
+		), "list_users").ServeHTTP)
 
 		r.Get("/search", otelhttp.NewHandler(kithttp.NewServer(
 			searchUsersEndpoint(svc),
 			decodeSearchUsers,
 			api.EncodeResponse,
 			opts...,
-		), "search_clients").ServeHTTP)
+		), "search_users").ServeHTTP)
 
 		r.Patch("/secret", otelhttp.NewHandler(kithttp.NewServer(
 			updateUserSecretEndpoint(svc),
 			decodeUpdateUserSecret,
 			api.EncodeResponse,
 			opts...,
-		), "update_client_secret").ServeHTTP)
+		), "update_user_secret").ServeHTTP)
 
 		r.Patch("/{id}/names", otelhttp.NewHandler(kithttp.NewServer(
 			updateUserNamesEndpoint(svc),
 			decodeUpdateUserNames,
 			api.EncodeResponse,
 			opts...,
-		), "update_client_names").ServeHTTP)
+		), "update_user_names").ServeHTTP)
 
 		r.Patch("/{id}/picture", otelhttp.NewHandler(kithttp.NewServer(
 			updateProfilePictureEndpoint(svc),
@@ -102,28 +102,28 @@ func usersHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *regexp
 			decodeUpdateUser,
 			api.EncodeResponse,
 			opts...,
-		), "update_client").ServeHTTP)
+		), "update_user").ServeHTTP)
 
 		r.Patch("/{id}/tags", otelhttp.NewHandler(kithttp.NewServer(
 			updateUserTagsEndpoint(svc),
 			decodeUpdateUserTags,
 			api.EncodeResponse,
 			opts...,
-		), "update_client_tags").ServeHTTP)
+		), "update_user_tags").ServeHTTP)
 
 		r.Patch("/{id}/identity", otelhttp.NewHandler(kithttp.NewServer(
 			updateUserIdentityEndpoint(svc),
 			decodeUpdateUserIdentity,
 			api.EncodeResponse,
 			opts...,
-		), "update_client_identity").ServeHTTP)
+		), "update_user_identity").ServeHTTP)
 
 		r.Patch("/{id}/role", otelhttp.NewHandler(kithttp.NewServer(
 			updateUserRoleEndpoint(svc),
 			decodeUpdateUserRole,
 			api.EncodeResponse,
 			opts...,
-		), "update_client_role").ServeHTTP)
+		), "update_user_role").ServeHTTP)
 
 		r.Post("/tokens/issue", otelhttp.NewHandler(kithttp.NewServer(
 			issueTokenEndpoint(svc),
@@ -144,21 +144,21 @@ func usersHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *regexp
 			decodeChangeUserStatus,
 			api.EncodeResponse,
 			opts...,
-		), "enable_client").ServeHTTP)
+		), "enable_user").ServeHTTP)
 
 		r.Post("/{id}/disable", otelhttp.NewHandler(kithttp.NewServer(
 			disableUserEndpoint(svc),
 			decodeChangeUserStatus,
 			api.EncodeResponse,
 			opts...,
-		), "disable_client").ServeHTTP)
+		), "disable_user").ServeHTTP)
 
 		r.Delete("/{id}", otelhttp.NewHandler(kithttp.NewServer(
 			deleteUserEndpoint(svc),
 			decodeChangeUserStatus,
 			api.EncodeResponse,
 			opts...,
-		), "delete_client").ServeHTTP)
+		), "delete_user").ServeHTTP)
 	})
 
 	r.Route("/password", func(r chi.Router) {
@@ -240,7 +240,7 @@ func decodeViewProfile(_ context.Context, r *http.Request) (interface{}, error) 
 func decodeViewUserByUserName(_ context.Context, r *http.Request) (interface{}, error) {
 	req := viewUserByUserNameReq{
 		token:    apiutil.ExtractBearerToken(r),
-		UserName: chi.URLParam(r, "userName"),
+		userName: chi.URLParam(r, "userName"),
 	}
 
 	return req, nil
@@ -443,11 +443,9 @@ func decodeUpdateUserProfilePicture(_ context.Context, r *http.Request) (interfa
 		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
 	}
 
-	var c users.User
-
 	req := updateProfilePictureReq{
 		token: apiutil.ExtractBearerToken(r),
-		User:  c,
+		id:    chi.URLParam(r, "id"),
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -650,8 +648,6 @@ func queryPageParams(r *http.Request, defPermission string) (mgclients.Page, err
 	if err != nil {
 		return mgclients.Page{}, errors.Wrap(apiutil.ErrValidation, err)
 	}
-
-	// here's another mgclients.page
 
 	return mgclients.Page{
 		Status:     st,

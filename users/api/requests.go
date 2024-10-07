@@ -73,14 +73,14 @@ func (req viewProfileReq) validate() error {
 
 type viewUserByUserNameReq struct {
 	token    string
-	UserName string
+	userName string
 }
 
 func (req viewUserByUserNameReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
-	if req.UserName == "" {
+	if req.userName == "" {
 		return apiutil.ErrMissingUserName
 	}
 
@@ -277,8 +277,9 @@ func (req updateUserNamesReq) validate() error {
 }
 
 type updateProfilePictureReq struct {
-	token string
-	User  users.User
+	token          string
+	id             string
+	ProfilePicture string `json:"profile_picture,omitempty"`
 }
 
 func (req updateProfilePictureReq) validate() error {
@@ -286,10 +287,13 @@ func (req updateProfilePictureReq) validate() error {
 		return apiutil.ErrBearerToken
 	}
 
-	if req.User.ID == "" {
+	if req.id == "" {
 		return apiutil.ErrMissingID
 	}
 
+	if req.ProfilePicture == "" {
+		return apiutil.ErrMissingProfilePicture
+	}
 	return nil
 }
 

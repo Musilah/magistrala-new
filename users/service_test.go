@@ -483,7 +483,7 @@ func TestListUsers(t *testing.T) {
 	cases := []struct {
 		desc                string
 		token               string
-		page                mgclients.Page // another mgclients.Page
+		page                mgclients.Page
 		identifyResponse    *magistrala.IdentityRes
 		authorizeResponse   *magistrala.AuthorizeRes
 		retrieveAllResponse users.UsersPage
@@ -598,7 +598,7 @@ func TestSearchUsers(t *testing.T) {
 	cases := []struct {
 		desc               string
 		token              string
-		page               mgclients.Page // another mgclients.Page
+		page               mgclients.Page
 		identifyResp       *magistrala.IdentityRes
 		authorizeResponse  *magistrala.AuthorizeRes
 		response           users.UsersPage
@@ -622,7 +622,7 @@ func TestSearchUsers(t *testing.T) {
 		{
 			desc:        "search users with invalid token",
 			token:       inValidToken,
-			page:        mgclients.Page{Offset: 0, Name: "username", Limit: 100}, // another mgclients.Page
+			page:        mgclients.Page{Offset: 0, Name: "username", Limit: 100},
 			response:    users.UsersPage{},
 			responseErr: svcerr.ErrAuthentication,
 			err:         svcerr.ErrAuthentication,
@@ -630,9 +630,9 @@ func TestSearchUsers(t *testing.T) {
 		{
 			desc:  "search users with id",
 			token: validToken,
-			page:  mgclients.Page{Offset: 0, Id: "d8dd12ef-aa2a-43fe-8ef2-2e4fe514360f", Limit: 100}, // another mgclients.Page
+			page:  mgclients.Page{Offset: 0, Id: "d8dd12ef-aa2a-43fe-8ef2-2e4fe514360f", Limit: 100},
 			response: users.UsersPage{
-				Page:  mgclients.Page{Total: 1, Offset: 0, Limit: 100}, // another mgclients.Page
+				Page:  mgclients.Page{Total: 1, Offset: 0, Limit: 100},
 				Users: []users.User{user},
 			},
 			identifyResp:      &magistrala.IdentityRes{UserId: user.ID},
@@ -1797,7 +1797,7 @@ func TestListMembers(t *testing.T) {
 			groupID:                 validID,
 			objectKind:              authsvc.ThingsKind,
 			objectID:                validID,
-			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"}, // another mgclients.Page
+			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse:        &magistrala.IdentityRes{UserId: user.ID},
 			listAllSubjectsResponse: &magistrala.ListSubjectsRes{},
 			authorizeReq: &magistrala.AuthorizeReq{
@@ -1919,7 +1919,7 @@ func TestListMembers(t *testing.T) {
 			groupID:          validID,
 			objectKind:       authsvc.ThingsKind,
 			objectID:         validID,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read", ListPerms: true}, // another mgclients.Page
+			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read", ListPerms: true},
 			identifyResponse: &magistrala.IdentityRes{UserId: user.ID},
 			authorizeReq: &magistrala.AuthorizeReq{
 				SubjectType: authsvc.UserType,
@@ -1958,7 +1958,7 @@ func TestListMembers(t *testing.T) {
 			groupID:          validID,
 			objectKind:       authsvc.ThingsKind,
 			objectID:         validID,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"}, // another mgclients.Page
+			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse: &magistrala.IdentityRes{UserId: user.ID},
 			authorizeReq: &magistrala.AuthorizeReq{
 				SubjectType: authsvc.UserType,
@@ -2035,7 +2035,7 @@ func TestListMembers(t *testing.T) {
 			groupID:                 validID,
 			objectKind:              authsvc.DomainsKind,
 			objectID:                validID,
-			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"}, // another mgclients.Page
+			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse:        &magistrala.IdentityRes{UserId: user.ID},
 			listAllSubjectsResponse: &magistrala.ListSubjectsRes{},
 			authorizeReq: &magistrala.AuthorizeReq{
@@ -2131,7 +2131,7 @@ func TestListMembers(t *testing.T) {
 			groupID:                 validID,
 			objectKind:              authsvc.GroupsKind,
 			objectID:                validID,
-			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"}, // another mgclients.Page
+			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse:        &magistrala.IdentityRes{UserId: user.ID},
 			listAllSubjectsResponse: &magistrala.ListSubjectsRes{},
 			authorizeReq: &magistrala.AuthorizeReq{
@@ -2205,7 +2205,7 @@ func TestListMembers(t *testing.T) {
 		{
 			desc:             "list members with invalid token",
 			token:            inValidToken,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"}, // another mgclients.Page
+			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse: &magistrala.IdentityRes{},
 			identifyErr:      svcerr.ErrAuthentication,
 			err:              svcerr.ErrAuthentication,
