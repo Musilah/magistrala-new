@@ -221,7 +221,7 @@ func main() {
 
 func newService(ctx context.Context, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
 	database := pgclient.NewDatabase(db, dbConfig, tracer)
-	storageClient, err := storage.NewStorageClient()
+	storageClient, err := storage.NewStorageClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
