@@ -44,7 +44,6 @@ import (
 	"github.com/absmach/magistrala/users/hasher"
 	clientspg "github.com/absmach/magistrala/users/postgres"
 	"github.com/absmach/magistrala/users/storage"
-
 	ctracing "github.com/absmach/magistrala/users/tracing"
 	"github.com/caarlos0/env/v11"
 	"github.com/go-chi/chi/v5"
