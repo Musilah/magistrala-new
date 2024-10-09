@@ -6,7 +6,6 @@ package api
 import (
 	"github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/pkg/apiutil"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/users"
 )
 
@@ -80,22 +79,19 @@ func (req viewUserByUserNameReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}
-	if req.userName == "" {
-		return apiutil.ErrMissingUserName
-	}
 
 	return nil
 }
 
 type listUsersReq struct {
 	token    string
-	status   mgclients.Status
+	status   users.Status
 	offset   uint64
 	limit    uint64
 	name     string
 	tag      string
 	identity string
-	metadata mgclients.Metadata
+	metadata users.Metadata
 	order    string
 	dir      string
 	id       string
@@ -138,7 +134,7 @@ func (req searchUsersReq) validate() error {
 }
 
 type listMembersByObjectReq struct {
-	mgclients.Page
+	users.Page
 	token      string
 	objectKind string
 	objectID   string
@@ -196,7 +192,7 @@ func (req updateUserTagsReq) validate() error {
 type updateUserRoleReq struct {
 	id    string
 	token string
-	role  mgclients.Role
+	role  users.Role
 	Role  string `json:"role,omitempty"`
 }
 
@@ -273,6 +269,10 @@ func (req updateUserNamesReq) validate() error {
 		return apiutil.ErrNameSize
 	}
 
+	if req.User.FirstName == "" && req.User.LastName == "" {
+		return apiutil.ErrMissingFullName
+	}
+
 	return nil
 }
 
@@ -291,9 +291,6 @@ func (req updateProfilePictureReq) validate() error {
 		return apiutil.ErrMissingID
 	}
 
-	if req.ProfilePicture == "" {
-		return apiutil.ErrMissingProfilePicture
-	}
 	return nil
 }
 

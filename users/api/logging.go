@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/absmach/magistrala"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/users"
 )
 
@@ -154,7 +153,7 @@ func (lm *loggingMiddleware) ViewUserByUserName(ctx context.Context, token, user
 
 // ListUsers logs the list_users request. It logs the page metadata and the time it took to complete the request.
 // If the request fails, it logs the error.
-func (lm *loggingMiddleware) ListUsers(ctx context.Context, token string, pm mgclients.Page) (cp users.UsersPage, err error) {
+func (lm *loggingMiddleware) ListUsers(ctx context.Context, token string, pm users.Page) (cp users.UsersPage, err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
@@ -175,7 +174,7 @@ func (lm *loggingMiddleware) ListUsers(ctx context.Context, token string, pm mgc
 }
 
 // SearchUsers logs the search_users request. It logs the page metadata and the time it took to complete the request.
-func (lm *loggingMiddleware) SearchUsers(ctx context.Context, token string, cp mgclients.Page) (up users.UsersPage, err error) {
+func (lm *loggingMiddleware) SearchUsers(ctx context.Context, token string, cp users.Page) (up users.UsersPage, err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
@@ -217,7 +216,7 @@ func (lm *loggingMiddleware) UpdateUser(ctx context.Context, token string, user 
 	return lm.svc.UpdateUser(ctx, token, user)
 }
 
-// UpdateUserTags logs the update_user_tags request. It logs the client id and the time it took to complete the request.
+// UpdateUserTags logs the update_user_tags request. It logs the user id and the time it took to complete the request.
 // If the request fails, it logs the error.
 func (lm *loggingMiddleware) UpdateUserTags(ctx context.Context, token string, user users.User) (u users.User, err error) {
 	defer func(begin time.Time) {
@@ -260,7 +259,7 @@ func (lm *loggingMiddleware) UpdateUserIdentity(ctx context.Context, token, id, 
 	return lm.svc.UpdateUserIdentity(ctx, token, id, identity)
 }
 
-// UpdateUserSecret logs the update_user_secret request. It logs the client id and the time it took to complete the request.
+// UpdateUserSecret logs the update_user_secret request. It logs the user id and the time it took to complete the request.
 // If the request fails, it logs the error.
 func (lm *loggingMiddleware) UpdateUserSecret(ctx context.Context, token, oldSecret, newSecret string) (u users.User, err error) {
 	defer func(begin time.Time) {
@@ -281,7 +280,7 @@ func (lm *loggingMiddleware) UpdateUserSecret(ctx context.Context, token, oldSec
 	return lm.svc.UpdateUserSecret(ctx, token, oldSecret, newSecret)
 }
 
-// UpdateUserNames logs the update_user_names request. It logs the client id and the time it took to complete the request.
+// UpdateUserNames logs the update_user_names request. It logs the user id and the time it took to complete the request.
 // If the request fails, it logs the error.
 func (lm *loggingMiddleware) UpdateUserNames(ctx context.Context, token string, user users.User) (u users.User, err error) {
 	defer func(begin time.Time) {
@@ -290,9 +289,9 @@ func (lm *loggingMiddleware) UpdateUserNames(ctx context.Context, token string, 
 			slog.Group("user",
 				slog.String("id", u.ID),
 				slog.String("name", u.Name),
-				slog.String("first_name", user.FirstName),
-				slog.String("last_name", user.LastName),
-				slog.String("user_name", user.UserName),
+				slog.String("first_name", u.FirstName),
+				slog.String("last_name", u.LastName),
+				slog.String("user_name", u.UserName),
 			),
 		}
 		if err != nil {
@@ -445,7 +444,7 @@ func (lm *loggingMiddleware) DisableUser(ctx context.Context, token, id string) 
 
 // ListMembers logs the list_members request. It logs the group id, and the time it took to complete the request.
 // If the request fails, it logs the error.
-func (lm *loggingMiddleware) ListMembers(ctx context.Context, token, objectKind, objectID string, cp mgclients.Page) (up users.MembersPage, err error) {
+func (lm *loggingMiddleware) ListMembers(ctx context.Context, token, objectKind, objectID string, cp users.Page) (up users.MembersPage, err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),

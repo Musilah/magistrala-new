@@ -13,7 +13,6 @@ import (
 	authsvc "github.com/absmach/magistrala/auth"
 	authmocks "github.com/absmach/magistrala/auth/mocks"
 	"github.com/absmach/magistrala/internal/testsutil"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/errors"
 	repoerr "github.com/absmach/magistrala/pkg/errors/repository"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
@@ -37,7 +36,7 @@ var (
 		Tags:        []string{"tag1", "tag2"},
 		Credentials: users.Credentials{Identity: "useridentity", Secret: secret},
 		Metadata:    validCMetadata,
-		Status:      mgclients.EnabledStatus,
+		Status:      users.EnabledStatus,
 	}
 	basicUser = users.User{
 		Name: "usersname",
@@ -98,7 +97,7 @@ func TestRegisterUser(t *testing.T) {
 					Identity: "newuserwithname@example.com",
 					Secret:   secret,
 				},
-				Status: mgclients.EnabledStatus,
+				Status: users.EnabledStatus,
 			},
 			addPoliciesResponse: &magistrala.AddPoliciesRes{Added: true},
 			err:                 nil,
@@ -129,7 +128,7 @@ func TestRegisterUser(t *testing.T) {
 				Metadata: users.Metadata{
 					"name": "newuserwithallfields",
 				},
-				Status: mgclients.EnabledStatus,
+				Status: users.EnabledStatus,
 			},
 			addPoliciesResponse: &magistrala.AddPoliciesRes{Added: true},
 			err:                 nil,
@@ -183,7 +182,7 @@ func TestRegisterUser(t *testing.T) {
 					Identity: "user with invalid status",
 					Secret:   secret,
 				},
-				Status: mgclients.AllStatus,
+				Status: users.AllStatus,
 			},
 			addPoliciesResponse:    &magistrala.AddPoliciesRes{Added: true},
 			deletePoliciesResponse: &magistrala.DeletePolicyRes{Deleted: true},
@@ -211,7 +210,7 @@ func TestRegisterUser(t *testing.T) {
 					Identity: "userwithfailedpolicies@example.com",
 					Secret:   secret,
 				},
-				Role: mgclients.AdminRole,
+				Role: users.AdminRole,
 			},
 			addPoliciesResponse: &magistrala.AddPoliciesRes{Added: false},
 			err:                 svcerr.ErrAuthorization,
@@ -224,7 +223,7 @@ func TestRegisterUser(t *testing.T) {
 					Identity: "userwithfailedpolicies@example.com",
 					Secret:   secret,
 				},
-				Role: mgclients.AdminRole,
+				Role: users.AdminRole,
 			},
 			addPoliciesResponse:    &magistrala.AddPoliciesRes{Added: true},
 			addPoliciesResponseErr: svcerr.ErrAddPolicies,
@@ -238,7 +237,7 @@ func TestRegisterUser(t *testing.T) {
 					Identity: "userwithfailedtodelete@example.com",
 					Secret:   secret,
 				},
-				Role: mgclients.AdminRole,
+				Role: users.AdminRole,
 			},
 			addPoliciesResponse:       &magistrala.AddPoliciesRes{Added: true},
 			deletePoliciesResponse:    &magistrala.DeletePolicyRes{Deleted: false},
@@ -254,7 +253,7 @@ func TestRegisterUser(t *testing.T) {
 					Identity: "userwithfailedtodelete@example.com",
 					Secret:   secret,
 				},
-				Role: mgclients.AdminRole,
+				Role: users.AdminRole,
 			},
 			addPoliciesResponse:    &magistrala.AddPoliciesRes{Added: true},
 			deletePoliciesResponse: &magistrala.DeletePolicyRes{Deleted: false},
@@ -483,7 +482,7 @@ func TestListUsers(t *testing.T) {
 	cases := []struct {
 		desc                string
 		token               string
-		page                mgclients.Page
+		page                users.Page
 		identifyResponse    *magistrala.IdentityRes
 		authorizeResponse   *magistrala.AuthorizeRes
 		retrieveAllResponse users.UsersPage
@@ -497,19 +496,19 @@ func TestListUsers(t *testing.T) {
 	}{
 		{
 			desc: "list users as admin successfully",
-			page: mgclients.Page{
+			page: users.Page{
 				Total: 1,
 			},
 			identifyResponse:  &magistrala.IdentityRes{UserId: user.ID},
 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
 			retrieveAllResponse: users.UsersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total: 1,
 				},
 				Users: []users.User{user},
 			},
 			response: users.UsersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total: 1,
 				},
 				Users: []users.User{user},
@@ -519,7 +518,7 @@ func TestListUsers(t *testing.T) {
 		},
 		{
 			desc: "list users as admin with invalid token",
-			page: mgclients.Page{
+			page: users.Page{
 				Total: 1,
 			},
 			identifyResponse: &magistrala.IdentityRes{},
@@ -528,7 +527,7 @@ func TestListUsers(t *testing.T) {
 		},
 		{
 			desc: "list users as admin with invalid ID",
-			page: mgclients.Page{
+			page: users.Page{
 				Total: 1,
 			},
 			identifyResponse:  &magistrala.IdentityRes{UserId: user.ID},
@@ -539,7 +538,7 @@ func TestListUsers(t *testing.T) {
 		},
 		{
 			desc: "list users as admin with failed to retrieve users",
-			page: mgclients.Page{
+			page: users.Page{
 				Total: 1,
 			},
 			identifyResponse:    &magistrala.IdentityRes{UserId: user.ID},
@@ -551,7 +550,7 @@ func TestListUsers(t *testing.T) {
 		},
 		{
 			desc: "list users as admin with failed check on super admin",
-			page: mgclients.Page{
+			page: users.Page{
 				Total: 1,
 			},
 			identifyResponse:  &magistrala.IdentityRes{UserId: user.ID},
@@ -562,7 +561,7 @@ func TestListUsers(t *testing.T) {
 		},
 		{
 			desc: "list users as normal user with failed to retrieve users",
-			page: mgclients.Page{
+			page: users.Page{
 				Total: 1,
 			},
 			identifyResponse:    &magistrala.IdentityRes{UserId: user.ID},
@@ -598,7 +597,7 @@ func TestSearchUsers(t *testing.T) {
 	cases := []struct {
 		desc               string
 		token              string
-		page               mgclients.Page
+		page               users.Page
 		identifyResp       *magistrala.IdentityRes
 		authorizeResponse  *magistrala.AuthorizeRes
 		response           users.UsersPage
@@ -611,9 +610,9 @@ func TestSearchUsers(t *testing.T) {
 		{
 			desc:  "search users with valid token",
 			token: validToken,
-			page:  mgclients.Page{Offset: 0, Name: "username", Limit: 100},
+			page:  users.Page{Offset: 0, Name: "username", Limit: 100},
 			response: users.UsersPage{
-				Page:  mgclients.Page{Total: 1, Offset: 0, Limit: 100},
+				Page:  users.Page{Total: 1, Offset: 0, Limit: 100},
 				Users: []users.User{user},
 			},
 			identifyResp:      &magistrala.IdentityRes{UserId: user.ID},
@@ -622,7 +621,7 @@ func TestSearchUsers(t *testing.T) {
 		{
 			desc:        "search users with invalid token",
 			token:       inValidToken,
-			page:        mgclients.Page{Offset: 0, Name: "username", Limit: 100},
+			page:        users.Page{Offset: 0, Name: "username", Limit: 100},
 			response:    users.UsersPage{},
 			responseErr: svcerr.ErrAuthentication,
 			err:         svcerr.ErrAuthentication,
@@ -630,9 +629,9 @@ func TestSearchUsers(t *testing.T) {
 		{
 			desc:  "search users with id",
 			token: validToken,
-			page:  mgclients.Page{Offset: 0, Id: "d8dd12ef-aa2a-43fe-8ef2-2e4fe514360f", Limit: 100},
+			page:  users.Page{Offset: 0, Id: "d8dd12ef-aa2a-43fe-8ef2-2e4fe514360f", Limit: 100},
 			response: users.UsersPage{
-				Page:  mgclients.Page{Total: 1, Offset: 0, Limit: 100},
+				Page:  users.Page{Total: 1, Offset: 0, Limit: 100},
 				Users: []users.User{user},
 			},
 			identifyResp:      &magistrala.IdentityRes{UserId: user.ID},
@@ -641,9 +640,9 @@ func TestSearchUsers(t *testing.T) {
 		{
 			desc:  "search users with random name",
 			token: validToken,
-			page:  mgclients.Page{Offset: 0, Name: "randomname", Limit: 100},
+			page:  users.Page{Offset: 0, Name: "randomname", Limit: 100},
 			response: users.UsersPage{
-				Page:  mgclients.Page{Total: 0, Offset: 0, Limit: 100},
+				Page:  users.Page{Total: 0, Offset: 0, Limit: 100},
 				Users: []users.User{},
 			},
 			identifyResp:      &magistrala.IdentityRes{UserId: user.ID},
@@ -652,7 +651,7 @@ func TestSearchUsers(t *testing.T) {
 		{
 			desc:               "search users as a normal user",
 			token:              validToken,
-			page:               mgclients.Page{Offset: 0, Identity: "useridentity", Limit: 100},
+			page:               users.Page{Offset: 0, Identity: "useridentity", Limit: 100},
 			response:           users.UsersPage{},
 			authorizeResponse:  &magistrala.AuthorizeRes{Authorized: false},
 			checkSuperAdminErr: svcerr.ErrAuthorization,
@@ -1039,8 +1038,8 @@ func TestUpdateUserRole(t *testing.T) {
 	svc, cRepo, auth, policy, _ := newService(true)
 
 	user2 := user
-	user.Role = mgclients.AdminRole
-	user2.Role = mgclients.UserRole
+	user.Role = users.AdminRole
+	user2.Role = users.UserRole
 
 	superAdminAuthReq := &magistrala.AuthorizeReq{
 		SubjectType: authsvc.UserType,
@@ -1394,10 +1393,10 @@ func TestUpdateUserSecret(t *testing.T) {
 func TestEnableUser(t *testing.T) {
 	svc, cRepo, auth, _, _ := newService(true)
 
-	enabledUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "uaer1@example.com", Secret: "password"}, Status: mgclients.EnabledStatus}
-	disabledUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "uaer3@example.com", Secret: "password"}, Status: mgclients.DisabledStatus}
+	enabledUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "uaer1@example.com", Secret: "password"}, Status: users.EnabledStatus}
+	disabledUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "uaer3@example.com", Secret: "password"}, Status: users.DisabledStatus}
 	endisabledUser1 := disabledUser1
-	endisabledUser1.Status = mgclients.EnabledStatus
+	endisabledUser1.Status = users.EnabledStatus
 
 	cases := []struct {
 		desc                 string
@@ -1518,10 +1517,10 @@ func TestEnableUser(t *testing.T) {
 func TestDisableUser(t *testing.T) {
 	svc, cRepo, auth, _, _ := newService(true)
 
-	enabledUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "user1@example.com", Secret: "password"}, Status: mgclients.EnabledStatus}
-	disabledUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "user3@example.com", Secret: "password"}, Status: mgclients.DisabledStatus}
+	enabledUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "user1@example.com", Secret: "password"}, Status: users.EnabledStatus}
+	disabledUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "user3@example.com", Secret: "password"}, Status: users.DisabledStatus}
 	disenabledUser1 := enabledUser1
-	disenabledUser1.Status = mgclients.DisabledStatus
+	disenabledUser1.Status = users.DisabledStatus
 
 	cases := []struct {
 		desc                 string
@@ -1642,10 +1641,10 @@ func TestDisableUser(t *testing.T) {
 func TestDeleteUser(t *testing.T) {
 	svc, cRepo, auth, _, _ := newService(true)
 
-	enabledUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "user1@example.com", Secret: "password"}, Status: mgclients.EnabledStatus}
-	deletedUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "user3@example.com", Secret: "password"}, Status: mgclients.DeletedStatus}
+	enabledUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "user1@example.com", Secret: "password"}, Status: users.EnabledStatus}
+	deletedUser1 := users.User{ID: testsutil.GenerateUUID(t), Credentials: users.Credentials{Identity: "user3@example.com", Secret: "password"}, Status: users.DeletedStatus}
 	disenabledUser1 := enabledUser1
-	disenabledUser1.Status = mgclients.DeletedStatus
+	disenabledUser1.Status = users.DeletedStatus
 
 	cases := []struct {
 		desc                 string
@@ -1775,7 +1774,7 @@ func TestListMembers(t *testing.T) {
 		groupID                 string
 		objectKind              string
 		objectID                string
-		page                    mgclients.Page
+		page                    users.Page
 		identifyResponse        *magistrala.IdentityRes
 		authorizeReq            *magistrala.AuthorizeReq
 		listAllSubjectsReq      *magistrala.ListSubjectsReq
@@ -1797,7 +1796,7 @@ func TestListMembers(t *testing.T) {
 			groupID:                 validID,
 			objectKind:              authsvc.ThingsKind,
 			objectID:                validID,
-			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
+			page:                    users.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse:        &magistrala.IdentityRes{UserId: user.ID},
 			listAllSubjectsResponse: &magistrala.ListSubjectsRes{},
 			authorizeReq: &magistrala.AuthorizeReq{
@@ -1816,7 +1815,7 @@ func TestListMembers(t *testing.T) {
 			},
 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
 			response: users.MembersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  0,
 					Offset: 0,
 					Limit:  100,
@@ -1830,7 +1829,7 @@ func TestListMembers(t *testing.T) {
 			groupID:          validID,
 			objectKind:       authsvc.ThingsKind,
 			objectID:         validID,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
+			page:             users.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse: &magistrala.IdentityRes{UserId: user.ID},
 			authorizeReq: &magistrala.AuthorizeReq{
 				SubjectType: authsvc.UserType,
@@ -1851,7 +1850,7 @@ func TestListMembers(t *testing.T) {
 				Policies: []string{validPolicy},
 			},
 			retrieveAllResponse: users.UsersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  1,
 					Offset: 0,
 					Limit:  100,
@@ -1859,7 +1858,7 @@ func TestListMembers(t *testing.T) {
 				Users: []users.User{user},
 			},
 			response: users.MembersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  1,
 					Offset: 0,
 					Limit:  100,
@@ -1874,7 +1873,7 @@ func TestListMembers(t *testing.T) {
 			groupID:          validID,
 			objectKind:       authsvc.ThingsKind,
 			objectID:         validID,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read", ListPerms: true},
+			page:             users.Page{Offset: 0, Limit: 100, Permission: "read", ListPerms: true},
 			identifyResponse: &magistrala.IdentityRes{UserId: basicUser.ID},
 			authorizeReq: &magistrala.AuthorizeReq{
 				SubjectType: authsvc.UserType,
@@ -1895,7 +1894,7 @@ func TestListMembers(t *testing.T) {
 				Policies: []string{validPolicy},
 			},
 			retrieveAllResponse: users.UsersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  1,
 					Offset: 0,
 					Limit:  100,
@@ -1904,7 +1903,7 @@ func TestListMembers(t *testing.T) {
 			},
 			listPermissionsResponse: &magistrala.ListPermissionsRes{Permissions: []string{"read"}},
 			response: users.MembersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  1,
 					Offset: 0,
 					Limit:  100,
@@ -1919,7 +1918,7 @@ func TestListMembers(t *testing.T) {
 			groupID:          validID,
 			objectKind:       authsvc.ThingsKind,
 			objectID:         validID,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read", ListPerms: true},
+			page:             users.Page{Offset: 0, Limit: 100, Permission: "read", ListPerms: true},
 			identifyResponse: &magistrala.IdentityRes{UserId: user.ID},
 			authorizeReq: &magistrala.AuthorizeReq{
 				SubjectType: authsvc.UserType,
@@ -1940,7 +1939,7 @@ func TestListMembers(t *testing.T) {
 				Policies: []string{validPolicy},
 			},
 			retrieveAllResponse: users.UsersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  1,
 					Offset: 0,
 					Limit:  100,
@@ -1958,7 +1957,7 @@ func TestListMembers(t *testing.T) {
 			groupID:          validID,
 			objectKind:       authsvc.ThingsKind,
 			objectID:         validID,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
+			page:             users.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse: &magistrala.IdentityRes{UserId: user.ID},
 			authorizeReq: &magistrala.AuthorizeReq{
 				SubjectType: authsvc.UserType,
@@ -1977,7 +1976,7 @@ func TestListMembers(t *testing.T) {
 			groupID:          validID,
 			objectKind:       authsvc.ThingsKind,
 			objectID:         validID,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
+			page:             users.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse: &magistrala.IdentityRes{UserId: user.ID},
 			authorizeReq: &magistrala.AuthorizeReq{
 				SubjectType: authsvc.UserType,
@@ -2004,7 +2003,7 @@ func TestListMembers(t *testing.T) {
 			groupID:          validID,
 			objectKind:       authsvc.ThingsKind,
 			objectID:         validID,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
+			page:             users.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse: &magistrala.IdentityRes{UserId: user.ID},
 			authorizeReq: &magistrala.AuthorizeReq{
 				SubjectType: authsvc.UserType,
@@ -2035,7 +2034,7 @@ func TestListMembers(t *testing.T) {
 			groupID:                 validID,
 			objectKind:              authsvc.DomainsKind,
 			objectID:                validID,
-			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
+			page:                    users.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse:        &magistrala.IdentityRes{UserId: user.ID},
 			listAllSubjectsResponse: &magistrala.ListSubjectsRes{},
 			authorizeReq: &magistrala.AuthorizeReq{
@@ -2054,7 +2053,7 @@ func TestListMembers(t *testing.T) {
 			},
 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
 			response: users.MembersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  0,
 					Offset: 0,
 					Limit:  100,
@@ -2068,7 +2067,7 @@ func TestListMembers(t *testing.T) {
 			groupID:          validID,
 			objectKind:       authsvc.DomainsKind,
 			objectID:         validID,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
+			page:             users.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse: &magistrala.IdentityRes{UserId: user.ID},
 			authorizeReq: &magistrala.AuthorizeReq{
 				SubjectType: authsvc.UserType,
@@ -2089,7 +2088,7 @@ func TestListMembers(t *testing.T) {
 				Policies: []string{validPolicy},
 			},
 			retrieveAllResponse: users.UsersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  1,
 					Offset: 0,
 					Limit:  100,
@@ -2097,7 +2096,7 @@ func TestListMembers(t *testing.T) {
 				Users: []users.User{basicUser},
 			},
 			response: users.MembersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  1,
 					Offset: 0,
 					Limit:  100,
@@ -2112,7 +2111,7 @@ func TestListMembers(t *testing.T) {
 			groupID:          validID,
 			objectKind:       authsvc.DomainsKind,
 			objectID:         validID,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
+			page:             users.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse: &magistrala.IdentityRes{UserId: user.ID},
 			authorizeReq: &magistrala.AuthorizeReq{
 				SubjectType: authsvc.UserType,
@@ -2131,7 +2130,7 @@ func TestListMembers(t *testing.T) {
 			groupID:                 validID,
 			objectKind:              authsvc.GroupsKind,
 			objectID:                validID,
-			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
+			page:                    users.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse:        &magistrala.IdentityRes{UserId: user.ID},
 			listAllSubjectsResponse: &magistrala.ListSubjectsRes{},
 			authorizeReq: &magistrala.AuthorizeReq{
@@ -2150,7 +2149,7 @@ func TestListMembers(t *testing.T) {
 			},
 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
 			response: users.MembersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  0,
 					Offset: 0,
 					Limit:  100,
@@ -2164,7 +2163,7 @@ func TestListMembers(t *testing.T) {
 			groupID:          validID,
 			objectKind:       authsvc.GroupsKind,
 			objectID:         validID,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
+			page:             users.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse: &magistrala.IdentityRes{UserId: user.ID},
 			authorizeReq: &magistrala.AuthorizeReq{
 				SubjectType: authsvc.UserType,
@@ -2185,7 +2184,7 @@ func TestListMembers(t *testing.T) {
 				Policies: []string{validPolicy},
 			},
 			retrieveAllResponse: users.UsersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  1,
 					Offset: 0,
 					Limit:  100,
@@ -2193,7 +2192,7 @@ func TestListMembers(t *testing.T) {
 				Users: []users.User{user},
 			},
 			response: users.MembersPage{
-				Page: mgclients.Page{
+				Page: users.Page{
 					Total:  1,
 					Offset: 0,
 					Limit:  100,
@@ -2205,7 +2204,7 @@ func TestListMembers(t *testing.T) {
 		{
 			desc:             "list members with invalid token",
 			token:            inValidToken,
-			page:             mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
+			page:             users.Page{Offset: 0, Limit: 100, Permission: "read"},
 			identifyResponse: &magistrala.IdentityRes{},
 			identifyErr:      svcerr.ErrAuthentication,
 			err:              svcerr.ErrAuthentication,
@@ -2381,7 +2380,7 @@ func TestRefreshToken(t *testing.T) {
 			token:        validToken,
 			domainID:     validID,
 			identifyResp: &magistrala.IdentityRes{UserId: user.ID},
-			repoResp:     users.User{Status: mgclients.DisabledStatus},
+			repoResp:     users.User{Status: users.DisabledStatus},
 			err:          svcerr.ErrAuthentication,
 		},
 		{
@@ -2671,7 +2670,7 @@ func TestOAuthCallback(t *testing.T) {
 			},
 			retrieveByIdentityResponse: users.User{
 				ID:   testsutil.GenerateUUID(t),
-				Role: mgclients.UserRole,
+				Role: users.UserRole,
 			},
 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
 			issueResponse: &magistrala.Token{
@@ -2694,7 +2693,7 @@ func TestOAuthCallback(t *testing.T) {
 			},
 			saveResponse: users.User{
 				ID:   testsutil.GenerateUUID(t),
-				Role: mgclients.UserRole,
+				Role: users.UserRole,
 			},
 			issueResponse: &magistrala.Token{
 				AccessToken:  strings.Repeat("a", 10),
@@ -2734,7 +2733,7 @@ func TestOAuthCallback(t *testing.T) {
 			},
 			retrieveByIdentityResponse: users.User{
 				ID:   testsutil.GenerateUUID(t),
-				Role: mgclients.UserRole,
+				Role: users.UserRole,
 			},
 			authorizeResponse:   &magistrala.AuthorizeRes{Authorized: false},
 			authorizeErr:        svcerr.ErrAuthorization,
@@ -2755,7 +2754,7 @@ func TestOAuthCallback(t *testing.T) {
 			},
 			retrieveByIdentityResponse: users.User{
 				ID:   testsutil.GenerateUUID(t),
-				Role: mgclients.UserRole,
+				Role: users.UserRole,
 			},
 			authorizeResponse:   &magistrala.AuthorizeRes{Authorized: false},
 			authorizeErr:        svcerr.ErrAuthorization,
@@ -2772,7 +2771,7 @@ func TestOAuthCallback(t *testing.T) {
 			},
 			retrieveByIdentityResponse: users.User{
 				ID:   testsutil.GenerateUUID(t),
-				Role: mgclients.UserRole,
+				Role: users.UserRole,
 			},
 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
 			issueErr:          svcerr.ErrAuthorization,

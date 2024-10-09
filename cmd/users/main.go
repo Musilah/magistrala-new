@@ -25,7 +25,6 @@ import (
 	gpostgres "github.com/absmach/magistrala/internal/groups/postgres"
 	gtracing "github.com/absmach/magistrala/internal/groups/tracing"
 	mglog "github.com/absmach/magistrala/logger"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/groups"
 	"github.com/absmach/magistrala/pkg/grpcclient"
@@ -294,8 +293,8 @@ func createAdmin(ctx context.Context, c config, urepo users.Repository, hsr user
 		},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		Role:      mgclients.AdminRole,
-		Status:    mgclients.EnabledStatus,
+		Role:      users.AdminRole,
+		Status:    users.EnabledStatus,
 	}
 
 	if c, err := urepo.RetrieveByIdentity(ctx, user.Credentials.Identity); err == nil {

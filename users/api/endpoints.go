@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/absmach/magistrala/pkg/apiutil"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/errors"
 	"github.com/absmach/magistrala/users"
 	"github.com/go-kit/kit/endpoint"
@@ -87,7 +86,7 @@ func listUsersEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		pm := mgclients.Page{
+		pm := users.Page{
 			Status:   req.status,
 			Offset:   req.offset,
 			Limit:    req.limit,
@@ -127,7 +126,7 @@ func searchUsersEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		pm := mgclients.Page{
+		pm := users.Page{
 			Offset: req.Offset,
 			Limit:  req.Limit,
 			Name:   req.Name,

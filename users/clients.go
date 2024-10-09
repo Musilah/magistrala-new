@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/absmach/magistrala"
-	"github.com/absmach/magistrala/pkg/clients"
 )
 
 // Service specifies an API that must be fullfiled by the domain service
@@ -15,8 +14,7 @@ import (
 //
 //go:generate mockery --name Service --output=./mocks --filename service.go --quiet --note "Copyright (c) Abstract Machines"
 type Service interface {
-	// RegisterUser creates new user. In case of the failed registration, a
-	// non-nil error value is returned.
+	// RegisterUser creates new user. In case of the failed registration, a non-nil error value is returned.
 	RegisterUser(ctx context.Context, token string, user User) (User, error)
 
 	// ViewUser retrieves user info for a given user ID and an authorized token.
@@ -29,13 +27,13 @@ type Service interface {
 	ViewUserByUserName(ctx context.Context, token, userName string) (User, error)
 
 	// ListUsers retrieves users list for a valid auth token.
-	ListUsers(ctx context.Context, token string, pm clients.Page) (UsersPage, error)
+	ListUsers(ctx context.Context, token string, pm Page) (UsersPage, error)
 
 	// ListMembers retrieves everything that is assigned to a group identified by objectID.
-	ListMembers(ctx context.Context, token, objectKind, objectID string, pm clients.Page) (MembersPage, error)
+	ListMembers(ctx context.Context, token, objectKind, objectID string, pm Page) (MembersPage, error)
 
 	// SearchUsers searches for users with provided filters for a valid auth token.
-	SearchUsers(ctx context.Context, token string, pm clients.Page) (UsersPage, error)
+	SearchUsers(ctx context.Context, token string, pm Page) (UsersPage, error)
 
 	// UpdateUser updates the user's name and metadata.
 	UpdateUser(ctx context.Context, token string, user User) (User, error)
@@ -69,7 +67,7 @@ type Service interface {
 	// UpdateUserRole updates the user's Role.
 	UpdateUserRole(ctx context.Context, token string, user User) (User, error)
 
-	// EnableUser logically enableds the user identified with the provided ID.
+	// EnableUser logically enables the user identified with the provided ID.
 	EnableUser(ctx context.Context, token, id string) (User, error)
 
 	// DisableUser logically disables the user identified with the provided ID.

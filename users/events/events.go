@@ -6,7 +6,6 @@ package events
 import (
 	"time"
 
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/events"
 	"github.com/absmach/magistrala/users"
 )
@@ -28,7 +27,7 @@ const (
 	resetSecret              = userPrefix + "reset_secret"
 	sendPasswordReset        = userPrefix + "send_password_reset"
 	oauthCallback            = userPrefix + "oauth_callback"
-	deleteClient             = userPrefix + "delete"
+	deleteUser               = userPrefix + "delete"
 	userUpdateUserNames      = userPrefix + "update_user_names"
 	userUpdateProfilePicture = userPrefix + "update_profile_picture"
 )
@@ -292,7 +291,7 @@ func (vue viewUserByUserNameEvent) Encode() (map[string]interface{}, error) {
 }
 
 type listUserEvent struct {
-	mgclients.Page
+	users.Page
 }
 
 func (lue listUserEvent) Encode() (map[string]interface{}, error) {
@@ -335,7 +334,7 @@ func (lue listUserEvent) Encode() (map[string]interface{}, error) {
 }
 
 type listUserByGroupEvent struct {
-	mgclients.Page
+	users.Page
 	objectKind string
 	objectID   string
 }
@@ -382,7 +381,7 @@ func (lcge listUserByGroupEvent) Encode() (map[string]interface{}, error) {
 }
 
 type searchUserEvent struct {
-	mgclients.Page
+	users.Page
 }
 
 func (sce searchUserEvent) Encode() (map[string]interface{}, error) {
@@ -483,7 +482,7 @@ type oauthCallbackEvent struct {
 func (oce oauthCallbackEvent) Encode() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"operation": oauthCallback,
-		"client_id": oce.userID,
+		"user_id":   oce.userID,
 	}, nil
 }
 
@@ -493,7 +492,7 @@ type deleteUserEvent struct {
 
 func (dce deleteUserEvent) Encode() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"operation": deleteClient,
+		"operation": deleteUser,
 		"id":        dce.id,
 	}, nil
 }

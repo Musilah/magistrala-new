@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/absmach/magistrala"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/users"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -60,7 +59,7 @@ func (tm *tracingMiddleware) ViewUser(ctx context.Context, token, id string) (us
 }
 
 // ListUsers traces the "ListUsers" operation of the wrapped users.Service.
-func (tm *tracingMiddleware) ListUsers(ctx context.Context, token string, pm mgclients.Page) (users.UsersPage, error) {
+func (tm *tracingMiddleware) ListUsers(ctx context.Context, token string, pm users.Page) (users.UsersPage, error) {
 	ctx, span := tm.tracer.Start(ctx, "svc_list_users", trace.WithAttributes(
 		attribute.Int64("offset", int64(pm.Offset)),
 		attribute.Int64("limit", int64(pm.Limit)),
@@ -74,7 +73,7 @@ func (tm *tracingMiddleware) ListUsers(ctx context.Context, token string, pm mgc
 }
 
 // SearchUsers traces the "SearchUsers" operation of the wrapped users.Service.
-func (tm *tracingMiddleware) SearchUsers(ctx context.Context, token string, pm mgclients.Page) (users.UsersPage, error) {
+func (tm *tracingMiddleware) SearchUsers(ctx context.Context, token string, pm users.Page) (users.UsersPage, error) {
 	ctx, span := tm.tracer.Start(ctx, "svc_search_users", trace.WithAttributes(attribute.String("token", token)))
 	defer span.End()
 
@@ -127,10 +126,10 @@ func (tm *tracingMiddleware) UpdateUserNames(ctx context.Context, token string, 
 	ctx, span := tm.tracer.Start(ctx, "svc_update_user_names", trace.WithAttributes(
 		attribute.String("id", user.ID),
 		attribute.String("name", user.Name),
-		attribute.String("fisrt_name", user.FirstName),
-		attribute.String("last_name", user.LastName),
-		attribute.String("user_name", user.UserName),
-		attribute.String("name", user.Name),
+		// attribute.String("fisrt_name", user.FirstName),
+		// attribute.String("last_name", user.LastName),
+		// attribute.String("user_name", user.UserName),
+		// attribute.String("name", user.Name),
 	))
 	defer span.End()
 
@@ -219,7 +218,7 @@ func (tm *tracingMiddleware) DisableUser(ctx context.Context, token, id string) 
 }
 
 // ListMembers traces the "ListMembers" operation of the wrapped users.Service.
-func (tm *tracingMiddleware) ListMembers(ctx context.Context, token, objectKind, objectID string, pm mgclients.Page) (users.MembersPage, error) {
+func (tm *tracingMiddleware) ListMembers(ctx context.Context, token, objectKind, objectID string, pm users.Page) (users.MembersPage, error) {
 	ctx, span := tm.tracer.Start(ctx, "svc_list_members", trace.WithAttributes(attribute.String("object_kind", objectKind)), trace.WithAttributes(attribute.String("object_id", objectID)))
 	defer span.End()
 

@@ -76,10 +76,11 @@ func (svc service) RegisterUser(ctx context.Context, token string, u User) (uc U
 		u.Credentials.Secret = hash
 	}
 
-	if u.Status != mgclients.DisabledStatus && u.Status != mgclients.EnabledStatus {
+	if u.Status != DisabledStatus && u.Status != EnabledStatus {
 		return User{}, errors.Wrap(svcerr.ErrMalformedEntity, svcerr.ErrInvalidStatus)
 	}
-	if u.Role != mgclients.UserRole && u.Role != mgclients.AdminRole {
+
+	if u.Role != UserRole && u.Role != AdminRole {
 		return User{}, errors.Wrap(svcerr.ErrMalformedEntity, svcerr.ErrInvalidRole)
 	}
 	u.ID = userID
@@ -139,7 +140,7 @@ func (svc service) RefreshToken(ctx context.Context, refreshToken, domainID stri
 	if err != nil {
 		return &magistrala.Token{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	if dbUser.Status == mgclients.DisabledStatus {
+	if dbUser.Status == DisabledStatus {
 		return &magistrala.Token{}, errors.Wrap(svcerr.ErrAuthentication, errLoginDisableUser)
 	}
 
@@ -195,7 +196,7 @@ func (svc service) ViewUserByUserName(ctx context.Context, token, userName strin
 	return user, nil
 }
 
-func (svc service) ListUsers(ctx context.Context, token string, pm mgclients.Page) (UsersPage, error) {
+func (svc service) ListUsers(ctx context.Context, token string, pm Page) (UsersPage, error) {
 	userID, err := svc.Identify(ctx, token)
 	if err != nil {
 		return UsersPage{}, err
@@ -204,7 +205,7 @@ func (svc service) ListUsers(ctx context.Context, token string, pm mgclients.Pag
 		return UsersPage{}, err
 	}
 
-	pm.Role = mgclients.AllRole
+	pm.Role = AllRole
 	pg, err := svc.users.RetrieveAll(ctx, pm)
 	if err != nil {
 		return UsersPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
@@ -212,18 +213,18 @@ func (svc service) ListUsers(ctx context.Context, token string, pm mgclients.Pag
 	return pg, err
 }
 
-func (svc service) SearchUsers(ctx context.Context, token string, pm mgclients.Page) (UsersPage, error) {
+func (svc service) SearchUsers(ctx context.Context, token string, pm Page) (UsersPage, error) {
 	_, err := svc.Identify(ctx, token)
 	if err != nil {
 		return UsersPage{}, err
 	}
 
-	page := mgclients.Page{
+	page := Page{
 		Offset: pm.Offset,
 		Limit:  pm.Limit,
 		Name:   pm.Name,
 		Id:     pm.Id,
-		Role:   mgclients.UserRole,
+		Role:   UserRole,
 	}
 
 	cp, err := svc.users.SearchUsers(ctx, page)
@@ -473,7 +474,7 @@ func (svc service) UpdateUserRole(ctx context.Context, token string, usr User) (
 	user, err = svc.users.UpdateRole(ctx, user)
 	if err != nil {
 		// If failed to update role in DB, then revert back to platform admin policy in spicedb
-		if errRollback := svc.updateUserPolicy(ctx, usr.ID, mgclients.UserRole); errRollback != nil {
+		if errRollback := svc.updateUserPolicy(ctx, usr.ID, UserRole); errRollback != nil {
 			return User{}, errors.Wrap(errRollback, err)
 		}
 		return User{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
@@ -485,7 +486,7 @@ func (svc service) EnableUser(ctx context.Context, token, id string) (User, erro
 	user := User{
 		ID:        id,
 		UpdatedAt: time.Now(),
-		Status:    mgclients.EnabledStatus,
+		Status:    EnabledStatus,
 	}
 	user, err := svc.changeUserStatus(ctx, token, user)
 	if err != nil {
@@ -499,7 +500,7 @@ func (svc service) DisableUser(ctx context.Context, token, id string) (User, err
 	user := User{
 		ID:        id,
 		UpdatedAt: time.Now(),
-		Status:    mgclients.DisabledStatus,
+		Status:    DisabledStatus,
 	}
 	user, err := svc.changeUserStatus(ctx, token, user)
 	if err != nil {
@@ -539,7 +540,7 @@ func (svc service) DeleteUser(ctx context.Context, token, id string) error {
 	user := User{
 		ID:        id,
 		UpdatedAt: time.Now(),
-		Status:    mgclients.DeletedStatus,
+		Status:    DeletedStatus,
 	}
 
 	if _, err := svc.changeUserStatus(ctx, token, user); err != nil {
@@ -549,7 +550,7 @@ func (svc service) DeleteUser(ctx context.Context, token, id string) error {
 	return nil
 }
 
-func (svc service) ListMembers(ctx context.Context, token, objectKind, objectID string, pm mgclients.Page) (MembersPage, error) {
+func (svc service) ListMembers(ctx context.Context, token, objectKind, objectID string, pm Page) (MembersPage, error) {
 	res, err := svc.identify(ctx, token)
 	if err != nil {
 		return MembersPage{}, err
@@ -584,7 +585,7 @@ func (svc service) ListMembers(ctx context.Context, token, objectKind, objectID 
 	}
 	if len(duids.Policies) == 0 {
 		return MembersPage{
-			Page: mgclients.Page{Total: 0, Offset: pm.Offset, Limit: pm.Limit},
+			Page: Page{Total: 0, Offset: pm.Offset, Limit: pm.Limit},
 		}, nil
 	}
 
@@ -731,7 +732,7 @@ func (svc service) Identify(ctx context.Context, token string) (string, error) {
 	return user.GetUserId(), nil
 }
 
-func (svc service) addUserPolicy(ctx context.Context, userID string, role mgclients.Role) error {
+func (svc service) addUserPolicy(ctx context.Context, userID string, role Role) error {
 	var policies magistrala.AddPoliciesReq
 
 	policies.AddPoliciesReq = append(policies.AddPoliciesReq, &magistrala.AddPolicyReq{
@@ -742,7 +743,7 @@ func (svc service) addUserPolicy(ctx context.Context, userID string, role mgclie
 		Object:      auth.MagistralaObject,
 	})
 
-	if role == mgclients.AdminRole {
+	if role == AdminRole {
 		policies.AddPoliciesReq = append(policies.AddPoliciesReq, &magistrala.AddPolicyReq{
 			SubjectType: auth.UserType,
 			Subject:     userID,
@@ -761,7 +762,7 @@ func (svc service) addUserPolicy(ctx context.Context, userID string, role mgclie
 	return nil
 }
 
-func (svc service) addUserPolicyRollback(ctx context.Context, userID string, role mgclients.Role) error {
+func (svc service) addUserPolicyRollback(ctx context.Context, userID string, role Role) error {
 	var policies magistrala.DeletePoliciesReq
 
 	policies.DeletePoliciesReq = append(policies.DeletePoliciesReq, &magistrala.DeletePolicyReq{
@@ -772,7 +773,7 @@ func (svc service) addUserPolicyRollback(ctx context.Context, userID string, rol
 		Object:      auth.MagistralaObject,
 	})
 
-	if role == mgclients.AdminRole {
+	if role == AdminRole {
 		policies.DeletePoliciesReq = append(policies.DeletePoliciesReq, &magistrala.DeletePolicyReq{
 			SubjectType: auth.UserType,
 			Subject:     userID,
@@ -791,9 +792,9 @@ func (svc service) addUserPolicyRollback(ctx context.Context, userID string, rol
 	return nil
 }
 
-func (svc service) updateUserPolicy(ctx context.Context, userID string, role mgclients.Role) error {
+func (svc service) updateUserPolicy(ctx context.Context, userID string, role Role) error {
 	switch role {
-	case mgclients.AdminRole:
+	case AdminRole:
 		resp, err := svc.policy.AddPolicy(ctx, &magistrala.AddPolicyReq{
 			SubjectType: auth.UserType,
 			Subject:     userID,
@@ -808,7 +809,7 @@ func (svc service) updateUserPolicy(ctx context.Context, userID string, role mgc
 			return svcerr.ErrAuthorization
 		}
 		return nil
-	case mgclients.UserRole:
+	case UserRole:
 		fallthrough
 	default:
 		resp, err := svc.policy.DeletePolicyFilter(ctx, &magistrala.DeletePolicyFilterReq{

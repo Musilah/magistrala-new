@@ -7,10 +7,7 @@ package mocks
 import (
 	context "context"
 
-	clients "github.com/absmach/magistrala/pkg/clients"
-
 	magistrala "github.com/absmach/magistrala"
-
 	mock "github.com/stretchr/testify/mock"
 
 	users "github.com/absmach/magistrala/users"
@@ -172,7 +169,7 @@ func (_m *Service) IssueToken(ctx context.Context, identity string, secret strin
 }
 
 // ListMembers provides a mock function with given fields: ctx, token, objectKind, objectID, pm
-func (_m *Service) ListMembers(ctx context.Context, token string, objectKind string, objectID string, pm clients.Page) (users.MembersPage, error) {
+func (_m *Service) ListMembers(ctx context.Context, token string, objectKind string, objectID string, pm users.Page) (users.MembersPage, error) {
 	ret := _m.Called(ctx, token, objectKind, objectID, pm)
 
 	if len(ret) == 0 {
@@ -181,16 +178,16 @@ func (_m *Service) ListMembers(ctx context.Context, token string, objectKind str
 
 	var r0 users.MembersPage
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, clients.Page) (users.MembersPage, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, users.Page) (users.MembersPage, error)); ok {
 		return rf(ctx, token, objectKind, objectID, pm)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, clients.Page) users.MembersPage); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, users.Page) users.MembersPage); ok {
 		r0 = rf(ctx, token, objectKind, objectID, pm)
 	} else {
 		r0 = ret.Get(0).(users.MembersPage)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, clients.Page) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, users.Page) error); ok {
 		r1 = rf(ctx, token, objectKind, objectID, pm)
 	} else {
 		r1 = ret.Error(1)
@@ -200,7 +197,7 @@ func (_m *Service) ListMembers(ctx context.Context, token string, objectKind str
 }
 
 // ListUsers provides a mock function with given fields: ctx, token, pm
-func (_m *Service) ListUsers(ctx context.Context, token string, pm clients.Page) (users.UsersPage, error) {
+func (_m *Service) ListUsers(ctx context.Context, token string, pm users.Page) (users.UsersPage, error) {
 	ret := _m.Called(ctx, token, pm)
 
 	if len(ret) == 0 {
@@ -209,16 +206,16 @@ func (_m *Service) ListUsers(ctx context.Context, token string, pm clients.Page)
 
 	var r0 users.UsersPage
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, clients.Page) (users.UsersPage, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, users.Page) (users.UsersPage, error)); ok {
 		return rf(ctx, token, pm)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, clients.Page) users.UsersPage); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, users.Page) users.UsersPage); ok {
 		r0 = rf(ctx, token, pm)
 	} else {
 		r0 = ret.Get(0).(users.UsersPage)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, clients.Page) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, users.Page) error); ok {
 		r1 = rf(ctx, token, pm)
 	} else {
 		r1 = ret.Error(1)
@@ -334,7 +331,7 @@ func (_m *Service) ResetSecret(ctx context.Context, resetToken string, secret st
 }
 
 // SearchUsers provides a mock function with given fields: ctx, token, pm
-func (_m *Service) SearchUsers(ctx context.Context, token string, pm clients.Page) (users.UsersPage, error) {
+func (_m *Service) SearchUsers(ctx context.Context, token string, pm users.Page) (users.UsersPage, error) {
 	ret := _m.Called(ctx, token, pm)
 
 	if len(ret) == 0 {
@@ -343,16 +340,16 @@ func (_m *Service) SearchUsers(ctx context.Context, token string, pm clients.Pag
 
 	var r0 users.UsersPage
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, clients.Page) (users.UsersPage, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, users.Page) (users.UsersPage, error)); ok {
 		return rf(ctx, token, pm)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, clients.Page) users.UsersPage); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, users.Page) users.UsersPage); ok {
 		r0 = rf(ctx, token, pm)
 	} else {
 		r0 = ret.Get(0).(users.UsersPage)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, clients.Page) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, users.Page) error); ok {
 		r1 = rf(ctx, token, pm)
 	} else {
 		r1 = ret.Error(1)

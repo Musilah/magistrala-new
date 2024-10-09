@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/absmach/magistrala"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/events"
 	"github.com/absmach/magistrala/pkg/events/store"
 	"github.com/absmach/magistrala/users"
@@ -103,7 +102,7 @@ func (es *eventStore) UpdateUserNames(ctx context.Context, token string, user us
 		return user, err
 	}
 
-	return user, nil
+	return es.update(ctx, "names", user)
 }
 
 func (es *eventStore) UpdateProfilePicture(ctx context.Context, token string, user users.User) (users.User, error) {
@@ -120,7 +119,7 @@ func (es *eventStore) UpdateProfilePicture(ctx context.Context, token string, us
 		return user, err
 	}
 
-	return user, nil
+	return es.update(ctx, "profile_picture", user)
 }
 
 func (es *eventStore) UpdateUserIdentity(ctx context.Context, token, id, identity string) (users.User, error) {
@@ -195,7 +194,7 @@ func (es *eventStore) ViewUserByUserName(ctx context.Context, token, userName st
 	return user, nil
 }
 
-func (es *eventStore) ListUsers(ctx context.Context, token string, pm mgclients.Page) (users.UsersPage, error) {
+func (es *eventStore) ListUsers(ctx context.Context, token string, pm users.Page) (users.UsersPage, error) {
 	cp, err := es.svc.ListUsers(ctx, token, pm)
 	if err != nil {
 		return cp, err
@@ -211,7 +210,7 @@ func (es *eventStore) ListUsers(ctx context.Context, token string, pm mgclients.
 	return cp, nil
 }
 
-func (es *eventStore) SearchUsers(ctx context.Context, token string, pm mgclients.Page) (users.UsersPage, error) {
+func (es *eventStore) SearchUsers(ctx context.Context, token string, pm users.Page) (users.UsersPage, error) {
 	cp, err := es.svc.SearchUsers(ctx, token, pm)
 	if err != nil {
 		return cp, err
@@ -227,7 +226,7 @@ func (es *eventStore) SearchUsers(ctx context.Context, token string, pm mgclient
 	return cp, nil
 }
 
-func (es *eventStore) ListMembers(ctx context.Context, token, objectKind, objectID string, pm mgclients.Page) (users.MembersPage, error) {
+func (es *eventStore) ListMembers(ctx context.Context, token, objectKind, objectID string, pm users.Page) (users.MembersPage, error) {
 	mp, err := es.svc.ListMembers(ctx, token, objectKind, objectID, pm)
 	if err != nil {
 		return mp, err

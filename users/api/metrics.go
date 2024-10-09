@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/absmach/magistrala"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/users"
 	"github.com/go-kit/kit/metrics"
 )
@@ -85,7 +84,7 @@ func (ms *metricsMiddleware) ViewUserByUserName(ctx context.Context, token, user
 }
 
 // ListUsers instruments ListUsers method with metrics.
-func (ms *metricsMiddleware) ListUsers(ctx context.Context, token string, pm mgclients.Page) (users.UsersPage, error) {
+func (ms *metricsMiddleware) ListUsers(ctx context.Context, token string, pm users.Page) (users.UsersPage, error) {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "list_users").Add(1)
 		ms.latency.With("method", "list_users").Observe(time.Since(begin).Seconds())
@@ -94,7 +93,7 @@ func (ms *metricsMiddleware) ListUsers(ctx context.Context, token string, pm mgc
 }
 
 // SearchUsers instruments SearchUsers method with metrics.
-func (ms *metricsMiddleware) SearchUsers(ctx context.Context, token string, pm mgclients.Page) (up users.UsersPage, err error) {
+func (ms *metricsMiddleware) SearchUsers(ctx context.Context, token string, pm users.Page) (up users.UsersPage, err error) {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "search_users").Add(1)
 		ms.latency.With("method", "search_users").Observe(time.Since(begin).Seconds())
@@ -211,7 +210,7 @@ func (ms *metricsMiddleware) DisableUser(ctx context.Context, token, id string) 
 }
 
 // ListMembers instruments ListMembers method with metrics.
-func (ms *metricsMiddleware) ListMembers(ctx context.Context, token, objectKind, objectID string, pm mgclients.Page) (up users.MembersPage, err error) {
+func (ms *metricsMiddleware) ListMembers(ctx context.Context, token, objectKind, objectID string, pm users.Page) (up users.MembersPage, err error) {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "list_members").Add(1)
 		ms.latency.With("method", "list_members").Observe(time.Since(begin).Seconds())
