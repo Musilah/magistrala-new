@@ -250,19 +250,19 @@ func createThings(s sdk.SDK, conf Config, token string) ([]sdk.Thing, error) {
 		for i := 0; i < batches; i++ {
 			ths, err := createThingsInBatch(s, conf, token, batchSize)
 			if err != nil {
-				return []sdk.Thing{}, fmt.Errorf("Failed to create the things: %w", err)
+				return []sdk.Thing{}, fmt.Errorf("failed to create the things: %w", err)
 			}
 			things = append(things, ths...)
 		}
 		ths, err := createThingsInBatch(s, conf, token, conf.Num%uint64(batchSize))
 		if err != nil {
-			return []sdk.Thing{}, fmt.Errorf("Failed to create the things: %w", err)
+			return []sdk.Thing{}, fmt.Errorf("failed to create the things: %w", err)
 		}
 		things = append(things, ths...)
 	} else {
 		ths, err := createThingsInBatch(s, conf, token, conf.Num)
 		if err != nil {
-			return []sdk.Thing{}, fmt.Errorf("Failed to create the things: %w", err)
+			return []sdk.Thing{}, fmt.Errorf("failed to create the things: %w", err)
 		}
 		things = append(things, ths...)
 	}
@@ -295,19 +295,19 @@ func createChannels(s sdk.SDK, conf Config, token string) ([]sdk.Channel, error)
 		for i := 0; i < batches; i++ {
 			chs, err := createChannelsInBatch(s, conf, token, batchSize)
 			if err != nil {
-				return []sdk.Channel{}, fmt.Errorf("Failed to create the channels: %w", err)
+				return []sdk.Channel{}, fmt.Errorf("failed to create the channels: %w", err)
 			}
 			channels = append(channels, chs...)
 		}
 		chs, err := createChannelsInBatch(s, conf, token, conf.Num%uint64(batchSize))
 		if err != nil {
-			return []sdk.Channel{}, fmt.Errorf("Failed to create the channels: %w", err)
+			return []sdk.Channel{}, fmt.Errorf("failed to create the channels: %w", err)
 		}
 		channels = append(channels, chs...)
 	} else {
 		chs, err := createChannelsInBatch(s, conf, token, conf.Num)
 		if err != nil {
-			return []sdk.Channel{}, fmt.Errorf("Failed to create the channels: %w", err)
+			return []sdk.Channel{}, fmt.Errorf("failed to create the channels: %w", err)
 		}
 		channels = append(channels, chs...)
 	}

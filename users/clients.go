@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/absmach/magistrala"
-	"github.com/absmach/magistrala/pkg/clients"
 )
 
 // Service specifies an API that must be fullfiled by the domain service
@@ -15,40 +14,48 @@ import (
 //
 //go:generate mockery --name Service --output=./mocks --filename service.go --quiet --note "Copyright (c) Abstract Machines"
 type Service interface {
-	// RegisterClient creates new client. In case of the failed registration, a
-	// non-nil error value is returned.
-	RegisterClient(ctx context.Context, token string, client clients.Client) (clients.Client, error)
+	// RegisterUser creates new user. In case of the failed registration, a non-nil error value is returned.
+	RegisterUser(ctx context.Context, token string, user User) (User, error)
 
-	// ViewClient retrieves client info for a given client ID and an authorized token.
-	ViewClient(ctx context.Context, token, id string) (clients.Client, error)
+	// ViewUser retrieves user info for a given user ID and an authorized token.
+	ViewUser(ctx context.Context, token, id string) (User, error)
 
-	// ViewProfile retrieves client info for a given token.
-	ViewProfile(ctx context.Context, token string) (clients.Client, error)
+	// ViewProfile retrieves user info for a given token.
+	ViewProfile(ctx context.Context, token string) (User, error)
 
-	// ListClients retrieves clients list for a valid auth token.
-	ListClients(ctx context.Context, token string, pm clients.Page) (clients.ClientsPage, error)
+	// ViewUserByUserName retrieves user info for a given user name.
+	ViewUserByUserName(ctx context.Context, token, userName string) (User, error)
 
-	// ListMembers retrieves everything that is assigned to a group/thing identified by objectID.
-	ListMembers(ctx context.Context, token, objectKind, objectID string, pm clients.Page) (clients.MembersPage, error)
+	// ListUsers retrieves users list for a valid auth token.
+	ListUsers(ctx context.Context, token string, pm Page) (UsersPage, error)
 
-	// SearchClients searches for users with provided filters for a valid auth token.
-	SearchUsers(ctx context.Context, token string, pm clients.Page) (clients.ClientsPage, error)
+	// ListMembers retrieves everything that is assigned to a group identified by objectID.
+	ListMembers(ctx context.Context, token, objectKind, objectID string, pm Page) (MembersPage, error)
 
-	// UpdateClient updates the client's name and metadata.
-	UpdateClient(ctx context.Context, token string, client clients.Client) (clients.Client, error)
+	// SearchUsers searches for users with provided filters for a valid auth token.
+	SearchUsers(ctx context.Context, token string, pm Page) (UsersPage, error)
 
-	// UpdateClientTags updates the client's tags.
-	UpdateClientTags(ctx context.Context, token string, client clients.Client) (clients.Client, error)
+	// UpdateUser updates the user's name and metadata.
+	UpdateUser(ctx context.Context, token string, user User) (User, error)
 
-	// UpdateClientIdentity updates the client's identity.
-	UpdateClientIdentity(ctx context.Context, token, id, identity string) (clients.Client, error)
+	// UpdateUserTags updates the user's tags.
+	UpdateUserTags(ctx context.Context, token string, user User) (User, error)
+
+	// UpdateUserIdentity updates the user's identity.
+	UpdateUserIdentity(ctx context.Context, token, id, identity string) (User, error)
 
 	// GenerateResetToken email where mail will be sent.
 	// host is used for generating reset link.
 	GenerateResetToken(ctx context.Context, email, host string) error
 
-	// UpdateClientSecret updates the client's secret.
-	UpdateClientSecret(ctx context.Context, token, oldSecret, newSecret string) (clients.Client, error)
+	// UpdateUserSecret updates the user's secret.
+	UpdateUserSecret(ctx context.Context, token, oldSecret, newSecret string) (User, error)
+
+	// UpdateUserNames updates the user's names.
+	UpdateUserNames(ctx context.Context, token string, usr User) (User, error)
+
+	// UpdateProfilePicture updates the user's profile picture.
+	UpdateProfilePicture(ctx context.Context, token string, usr User) (User, error)
 
 	// ResetSecret change users secret in reset flow.
 	// token can be authentication token or secret reset token.
@@ -57,19 +64,19 @@ type Service interface {
 	// SendPasswordReset sends reset password link to email.
 	SendPasswordReset(ctx context.Context, host, email, user, token string) error
 
-	// UpdateClientRole updates the client's Role.
-	UpdateClientRole(ctx context.Context, token string, client clients.Client) (clients.Client, error)
+	// UpdateUserRole updates the user's Role.
+	UpdateUserRole(ctx context.Context, token string, user User) (User, error)
 
-	// EnableClient logically enableds the client identified with the provided ID.
-	EnableClient(ctx context.Context, token, id string) (clients.Client, error)
+	// EnableUser logically enables the user identified with the provided ID.
+	EnableUser(ctx context.Context, token, id string) (User, error)
 
-	// DisableClient logically disables the client identified with the provided ID.
-	DisableClient(ctx context.Context, token, id string) (clients.Client, error)
+	// DisableUser logically disables the user identified with the provided ID.
+	DisableUser(ctx context.Context, token, id string) (User, error)
 
-	// DeleteClient deletes client with given ID.
-	DeleteClient(ctx context.Context, token, id string) error
+	// DeleteUser deletes user with given ID.
+	DeleteUser(ctx context.Context, token, id string) error
 
-	// Identify returns the client id from the given token.
+	// Identify returns the user id from the given token.
 	Identify(ctx context.Context, tkn string) (string, error)
 
 	// IssueToken issues a new access and refresh token.
@@ -82,5 +89,5 @@ type Service interface {
 
 	// OAuthCallback handles the callback from any supported OAuth provider.
 	// It processes the OAuth tokens and either signs in or signs up the user based on the provided state.
-	OAuthCallback(ctx context.Context, client clients.Client) (*magistrala.Token, error)
+	OAuthCallback(ctx context.Context, user User) (*magistrala.Token, error)
 }

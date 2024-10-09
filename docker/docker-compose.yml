@@ -451,6 +451,8 @@ services:
       MG_OAUTH_UI_ERROR_URL: ${MG_OAUTH_UI_ERROR_URL}
       MG_USERS_DELETE_INTERVAL: ${MG_USERS_DELETE_INTERVAL}
       MG_USERS_DELETE_AFTER: ${MG_USERS_DELETE_AFTER}
+      MG_GOOGLE_APPLICATION_CREDENTIALS: ${MG_GOOGLE_APPLICATION_CREDENTIALS}
+      MG_BUCKET_NAME: ${MG_BUCKET_NAME}
     ports:
       - ${MG_USERS_HTTP_PORT}:${MG_USERS_HTTP_PORT}
     networks:
@@ -473,6 +475,10 @@ services:
         target: /auth-grpc-server-ca${MG_AUTH_GRPC_SERVER_CA_CERTS:+.crt}
         bind:
           create_host_path: true
+      - ./../secrets/magistrala-photos-2935343c2361.json:/magistrala-photos-2935343c2361.json
+    
+    env_file:
+      - .env
 
   jaeger:
     image: jaegertracing/all-in-one:1.60

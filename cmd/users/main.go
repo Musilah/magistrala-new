@@ -25,14 +25,12 @@ import (
 	gpostgres "github.com/absmach/magistrala/internal/groups/postgres"
 	gtracing "github.com/absmach/magistrala/internal/groups/tracing"
 	mglog "github.com/absmach/magistrala/logger"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/groups"
 	"github.com/absmach/magistrala/pkg/grpcclient"
 	jaegerclient "github.com/absmach/magistrala/pkg/jaeger"
 	"github.com/absmach/magistrala/pkg/oauth2"
 	googleoauth "github.com/absmach/magistrala/pkg/oauth2/google"
-	"github.com/absmach/magistrala/pkg/postgres"
 	pgclient "github.com/absmach/magistrala/pkg/postgres"
 	"github.com/absmach/magistrala/pkg/prometheus"
 	"github.com/absmach/magistrala/pkg/server"
@@ -44,6 +42,7 @@ import (
 	uevents "github.com/absmach/magistrala/users/events"
 	"github.com/absmach/magistrala/users/hasher"
 	clientspg "github.com/absmach/magistrala/users/postgres"
+	"github.com/absmach/magistrala/users/storage"
 	ctracing "github.com/absmach/magistrala/users/tracing"
 	"github.com/caarlos0/env/v11"
 	"github.com/go-chi/chi/v5"
@@ -65,22 +64,24 @@ const (
 )
 
 type config struct {
-	LogLevel           string        `env:"MG_USERS_LOG_LEVEL"           envDefault:"info"`
-	AdminEmail         string        `env:"MG_USERS_ADMIN_EMAIL"         envDefault:"admin@example.com"`
-	AdminPassword      string        `env:"MG_USERS_ADMIN_PASSWORD"      envDefault:"12345678"`
-	PassRegexText      string        `env:"MG_USERS_PASS_REGEX"          envDefault:"^.{8,}$"`
-	ResetURL           string        `env:"MG_TOKEN_RESET_ENDPOINT"      envDefault:"/reset-request"`
-	JaegerURL          url.URL       `env:"MG_JAEGER_URL"                envDefault:"http://localhost:4318/v1/traces"`
-	SendTelemetry      bool          `env:"MG_SEND_TELEMETRY"            envDefault:"true"`
-	InstanceID         string        `env:"MG_USERS_INSTANCE_ID"         envDefault:""`
-	ESURL              string        `env:"MG_ES_URL"                    envDefault:"nats://localhost:4222"`
-	TraceRatio         float64       `env:"MG_JAEGER_TRACE_RATIO"        envDefault:"1.0"`
-	SelfRegister       bool          `env:"MG_USERS_ALLOW_SELF_REGISTER" envDefault:"false"`
-	OAuthUIRedirectURL string        `env:"MG_OAUTH_UI_REDIRECT_URL"     envDefault:"http://localhost:9095/domains"`
-	OAuthUIErrorURL    string        `env:"MG_OAUTH_UI_ERROR_URL"        envDefault:"http://localhost:9095/error"`
-	DeleteInterval     time.Duration `env:"MG_USERS_DELETE_INTERVAL"     envDefault:"24h"`
-	DeleteAfter        time.Duration `env:"MG_USERS_DELETE_AFTER"        envDefault:"720h"`
-	PassRegex          *regexp.Regexp
+	LogLevel             string        `env:"MG_USERS_LOG_LEVEL"           envDefault:"info"`
+	AdminEmail           string        `env:"MG_USERS_ADMIN_EMAIL"         envDefault:"admin@example.com"`
+	AdminPassword        string        `env:"MG_USERS_ADMIN_PASSWORD"      envDefault:"12345678"`
+	PassRegexText        string        `env:"MG_USERS_PASS_REGEX"          envDefault:"^.{8,}$"`
+	ResetURL             string        `env:"MG_TOKEN_RESET_ENDPOINT"      envDefault:"/reset-request"`
+	JaegerURL            url.URL       `env:"MG_JAEGER_URL"                envDefault:"http://localhost:4318/v1/traces"`
+	SendTelemetry        bool          `env:"MG_SEND_TELEMETRY"            envDefault:"true"`
+	InstanceID           string        `env:"MG_USERS_INSTANCE_ID"         envDefault:""`
+	ESURL                string        `env:"MG_ES_URL"                    envDefault:"nats://localhost:4222"`
+	TraceRatio           float64       `env:"MG_JAEGER_TRACE_RATIO"        envDefault:"1.0"`
+	SelfRegister         bool          `env:"MG_USERS_ALLOW_SELF_REGISTER" envDefault:"false"`
+	OAuthUIRedirectURL   string        `env:"MG_OAUTH_UI_REDIRECT_URL"     envDefault:"http://localhost:9095/domains"`
+	OAuthUIErrorURL      string        `env:"MG_OAUTH_UI_ERROR_URL"        envDefault:"http://localhost:9095/error"`
+	DeleteInterval       time.Duration `env:"MG_USERS_DELETE_INTERVAL"     envDefault:"24h"`
+	DeleteAfter          time.Duration `env:"MG_USERS_DELETE_AFTER"        envDefault:"720h"`
+	GoogleAppCredentials string        `env:"MG_GOOGLE_APPLICATION_CREDENTIALS"`
+	GoogleBucketName     string        `env:"GOOGLE_MG_BUCKET_NAME"`
+	PassRegex            *regexp.Regexp
 }
 
 func main() {
@@ -219,8 +220,12 @@ func main() {
 }
 
 func newService(ctx context.Context, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
-	database := postgres.NewDatabase(db, dbConfig, tracer)
-	cRepo := clientspg.NewRepository(database)
+	database := pgclient.NewDatabase(db, dbConfig, tracer)
+	storageClient, err := storage.NewStorageClient(ctx, c.GoogleAppCredentials, c.GoogleBucketName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	cRepo := clientspg.NewRepository(database, storageClient)
 	gRepo := gpostgres.New(database)
 
 	idp := uuid.New()
@@ -266,7 +271,7 @@ func newService(ctx context.Context, authClient authclient.AuthServiceClient, po
 	return csvc, gsvc, err
 }
 
-func createAdmin(ctx context.Context, c config, crepo clientspg.Repository, hsr users.Hasher, svc users.Service) (string, error) {
+func createAdmin(ctx context.Context, c config, urepo users.Repository, hsr users.Hasher, svc users.Service) (string, error) {
 	id, err := uuid.New().ID()
 	if err != nil {
 		return "", err
@@ -276,34 +281,34 @@ func createAdmin(ctx context.Context, c config, crepo clientspg.Repository, hsr 
 		return "", err
 	}
 
-	client := mgclients.Client{
+	user := users.User{
 		ID:   id,
 		Name: "admin",
-		Credentials: mgclients.Credentials{
+		Credentials: users.Credentials{
 			Identity: c.AdminEmail,
 			Secret:   hash,
 		},
-		Metadata: mgclients.Metadata{
+		Metadata: users.Metadata{
 			"role": "admin",
 		},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		Role:      mgclients.AdminRole,
-		Status:    mgclients.EnabledStatus,
+		Role:      users.AdminRole,
+		Status:    users.EnabledStatus,
 	}
 
-	if c, err := crepo.RetrieveByIdentity(ctx, client.Credentials.Identity); err == nil {
+	if c, err := urepo.RetrieveByIdentity(ctx, user.Credentials.Identity); err == nil {
 		return c.ID, nil
 	}
 
 	// Create an admin
-	if _, err = crepo.Save(ctx, client); err != nil {
+	if _, err = urepo.Save(ctx, user); err != nil {
 		return "", err
 	}
 	if _, err = svc.IssueToken(ctx, c.AdminEmail, c.AdminPassword, ""); err != nil {
 		return "", err
 	}
-	return client.ID, nil
+	return user.ID, nil
 }
 
 func createAdminPolicy(ctx context.Context, clientID string, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient) error {

@@ -7,13 +7,14 @@ import (
 	"context"
 
 	"github.com/absmach/magistrala"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/users"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
 var _ users.Service = (*tracingMiddleware)(nil)
+
+// tracing has the service functions
 
 type tracingMiddleware struct {
 	tracer trace.Tracer
@@ -25,15 +26,15 @@ func New(svc users.Service, tracer trace.Tracer) users.Service {
 	return &tracingMiddleware{tracer, svc}
 }
 
-// RegisterClient traces the "RegisterClient" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) RegisterClient(ctx context.Context, token string, client mgclients.Client) (mgclients.Client, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_register_client", trace.WithAttributes(attribute.String("identity", client.Credentials.Identity)))
+// RegisterUser traces the "RegisterUser" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) RegisterUser(ctx context.Context, token string, user users.User) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_register_user", trace.WithAttributes(attribute.String("identity", user.Credentials.Identity)))
 	defer span.End()
 
-	return tm.svc.RegisterClient(ctx, token, client)
+	return tm.svc.RegisterUser(ctx, token, user)
 }
 
-// IssueToken traces the "IssueToken" operation of the wrapped clients.Service.
+// IssueToken traces the "IssueToken" operation of the wrapped users.Service.
 func (tm *tracingMiddleware) IssueToken(ctx context.Context, identity, secret, domainID string) (*magistrala.Token, error) {
 	ctx, span := tm.tracer.Start(ctx, "svc_issue_token", trace.WithAttributes(attribute.String("identity", identity)))
 	defer span.End()
@@ -41,7 +42,7 @@ func (tm *tracingMiddleware) IssueToken(ctx context.Context, identity, secret, d
 	return tm.svc.IssueToken(ctx, identity, secret, domainID)
 }
 
-// RefreshToken traces the "RefreshToken" operation of the wrapped clients.Service.
+// RefreshToken traces the "RefreshToken" operation of the wrapped users.Service.
 func (tm *tracingMiddleware) RefreshToken(ctx context.Context, accessToken, domainID string) (*magistrala.Token, error) {
 	ctx, span := tm.tracer.Start(ctx, "svc_refresh_token", trace.WithAttributes(attribute.String("access_token", accessToken)))
 	defer span.End()
@@ -49,17 +50,17 @@ func (tm *tracingMiddleware) RefreshToken(ctx context.Context, accessToken, doma
 	return tm.svc.RefreshToken(ctx, accessToken, domainID)
 }
 
-// ViewClient traces the "ViewClient" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) ViewClient(ctx context.Context, token, id string) (mgclients.Client, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_view_client", trace.WithAttributes(attribute.String("id", id)))
+// ViewUser traces the "ViewUser" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) ViewUser(ctx context.Context, token, id string) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_view_user", trace.WithAttributes(attribute.String("id", id)))
 	defer span.End()
 
-	return tm.svc.ViewClient(ctx, token, id)
+	return tm.svc.ViewUser(ctx, token, id)
 }
 
-// ListClients traces the "ListClients" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) ListClients(ctx context.Context, token string, pm mgclients.Page) (mgclients.ClientsPage, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_list_clients", trace.WithAttributes(
+// ListUsers traces the "ListUsers" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) ListUsers(ctx context.Context, token string, pm users.Page) (users.UsersPage, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_list_users", trace.WithAttributes(
 		attribute.Int64("offset", int64(pm.Offset)),
 		attribute.Int64("limit", int64(pm.Limit)),
 		attribute.String("direction", pm.Dir),
@@ -68,59 +69,82 @@ func (tm *tracingMiddleware) ListClients(ctx context.Context, token string, pm m
 
 	defer span.End()
 
-	return tm.svc.ListClients(ctx, token, pm)
+	return tm.svc.ListUsers(ctx, token, pm)
 }
 
-// SearchUsers traces the "SearchUsers" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) SearchUsers(ctx context.Context, token string, pm mgclients.Page) (mgclients.ClientsPage, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_search_clients", trace.WithAttributes(attribute.String("token", token)))
+// SearchUsers traces the "SearchUsers" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) SearchUsers(ctx context.Context, token string, pm users.Page) (users.UsersPage, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_search_users", trace.WithAttributes(attribute.String("token", token)))
 	defer span.End()
 
 	return tm.svc.SearchUsers(ctx, token, pm)
 }
 
-// UpdateClient traces the "UpdateClient" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) UpdateClient(ctx context.Context, token string, cli mgclients.Client) (mgclients.Client, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_update_client_name_and_metadata", trace.WithAttributes(
-		attribute.String("id", cli.ID),
-		attribute.String("name", cli.Name),
+// UpdateUser traces the "UpdateUser" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) UpdateUser(ctx context.Context, token string, usr users.User) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_update_user_name_and_metadata", trace.WithAttributes(
+		attribute.String("id", usr.ID),
+		attribute.String("name", usr.Name),
 	))
 	defer span.End()
 
-	return tm.svc.UpdateClient(ctx, token, cli)
+	return tm.svc.UpdateUser(ctx, token, usr)
 }
 
-// UpdateClientTags traces the "UpdateClientTags" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) UpdateClientTags(ctx context.Context, token string, cli mgclients.Client) (mgclients.Client, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_update_client_tags", trace.WithAttributes(
-		attribute.String("id", cli.ID),
-		attribute.StringSlice("tags", cli.Tags),
+// UpdateUserTags traces the "UpdateUserTags" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) UpdateUserTags(ctx context.Context, token string, usr users.User) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_update_user_tags", trace.WithAttributes(
+		attribute.String("id", usr.ID),
+		attribute.StringSlice("tags", usr.Tags),
 	))
 	defer span.End()
 
-	return tm.svc.UpdateClientTags(ctx, token, cli)
+	return tm.svc.UpdateUserTags(ctx, token, usr)
 }
 
-// UpdateClientIdentity traces the "UpdateClientIdentity" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) UpdateClientIdentity(ctx context.Context, token, id, identity string) (mgclients.Client, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_update_client_identity", trace.WithAttributes(
+// UpdateUserIdentity traces the "UpdateUserIdentity" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) UpdateUserIdentity(ctx context.Context, token, id, identity string) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_update_user_identity", trace.WithAttributes(
 		attribute.String("id", id),
 		attribute.String("identity", identity),
 	))
 	defer span.End()
 
-	return tm.svc.UpdateClientIdentity(ctx, token, id, identity)
+	return tm.svc.UpdateUserIdentity(ctx, token, id, identity)
 }
 
-// UpdateClientSecret traces the "UpdateClientSecret" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) UpdateClientSecret(ctx context.Context, token, oldSecret, newSecret string) (mgclients.Client, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_update_client_secret")
+// UpdateUserSecret traces the "UpdateUserSecret" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) UpdateUserSecret(ctx context.Context, token, oldSecret, newSecret string) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_update_user_secret")
 	defer span.End()
 
-	return tm.svc.UpdateClientSecret(ctx, token, oldSecret, newSecret)
+	return tm.svc.UpdateUserSecret(ctx, token, oldSecret, newSecret)
 }
 
-// GenerateResetToken traces the "GenerateResetToken" operation of the wrapped clients.Service.
+// UpdateUserFullName traces the "UpdateUserFullName" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) UpdateUserNames(ctx context.Context, token string, user users.User) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_update_user_names", trace.WithAttributes(
+		attribute.String("id", user.ID),
+		attribute.String("name", user.Name),
+		// attribute.String("fisrt_name", user.FirstName),
+		// attribute.String("last_name", user.LastName),
+		// attribute.String("user_name", user.UserName),
+		// attribute.String("name", user.Name),
+	))
+	defer span.End()
+
+	return tm.svc.UpdateUserNames(ctx, token, user)
+}
+
+// UpdateProfilePicture traces the "UpdateProfilePicture" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) UpdateProfilePicture(ctx context.Context, token string, usr users.User) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_update_profile_picture", trace.WithAttributes(attribute.String("id", usr.ID)))
+	defer span.End()
+
+	return tm.svc.UpdateProfilePicture(ctx, token, usr)
+}
+
+// GenerateResetToken traces the "GenerateResetToken" operation of the wrapped users.Service.
 func (tm *tracingMiddleware) GenerateResetToken(ctx context.Context, email, host string) error {
 	ctx, span := tm.tracer.Start(ctx, "svc_generate_reset_token", trace.WithAttributes(
 		attribute.String("email", email),
@@ -131,7 +155,7 @@ func (tm *tracingMiddleware) GenerateResetToken(ctx context.Context, email, host
 	return tm.svc.GenerateResetToken(ctx, email, host)
 }
 
-// ResetSecret traces the "ResetSecret" operation of the wrapped clients.Service.
+// ResetSecret traces the "ResetSecret" operation of the wrapped users.Service.
 func (tm *tracingMiddleware) ResetSecret(ctx context.Context, token, secret string) error {
 	ctx, span := tm.tracer.Start(ctx, "svc_reset_secret")
 	defer span.End()
@@ -139,7 +163,7 @@ func (tm *tracingMiddleware) ResetSecret(ctx context.Context, token, secret stri
 	return tm.svc.ResetSecret(ctx, token, secret)
 }
 
-// SendPasswordReset traces the "SendPasswordReset" operation of the wrapped clients.Service.
+// SendPasswordReset traces the "SendPasswordReset" operation of the wrapped users.Service.
 func (tm *tracingMiddleware) SendPasswordReset(ctx context.Context, host, email, user, token string) error {
 	ctx, span := tm.tracer.Start(ctx, "svc_send_password_reset", trace.WithAttributes(
 		attribute.String("email", email),
@@ -150,50 +174,58 @@ func (tm *tracingMiddleware) SendPasswordReset(ctx context.Context, host, email,
 	return tm.svc.SendPasswordReset(ctx, host, email, user, token)
 }
 
-// ViewProfile traces the "ViewProfile" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) ViewProfile(ctx context.Context, token string) (mgclients.Client, error) {
+// ViewProfile traces the "ViewProfile" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) ViewProfile(ctx context.Context, token string) (users.User, error) {
 	ctx, span := tm.tracer.Start(ctx, "svc_view_profile")
 	defer span.End()
 
 	return tm.svc.ViewProfile(ctx, token)
 }
 
-// UpdateClientRole traces the "UpdateClientRole" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) UpdateClientRole(ctx context.Context, token string, cli mgclients.Client) (mgclients.Client, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_update_client_role", trace.WithAttributes(
-		attribute.String("id", cli.ID),
-		attribute.StringSlice("tags", cli.Tags),
+// viewUserByUserName traces the "ViewUserByUserName" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) ViewUserByUserName(ctx context.Context, token, userName string) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_view_user_by_username", trace.WithAttributes(attribute.String("username", userName)))
+	defer span.End()
+
+	return tm.svc.ViewUserByUserName(ctx, token, userName)
+}
+
+// UpdateUserRole traces the "UpdateUserRole" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) UpdateUserRole(ctx context.Context, token string, usr users.User) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_update_user_role", trace.WithAttributes(
+		attribute.String("id", usr.ID),
+		attribute.StringSlice("tags", usr.Tags),
 	))
 	defer span.End()
 
-	return tm.svc.UpdateClientRole(ctx, token, cli)
+	return tm.svc.UpdateUserRole(ctx, token, usr)
 }
 
-// EnableClient traces the "EnableClient" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) EnableClient(ctx context.Context, token, id string) (mgclients.Client, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_enable_client", trace.WithAttributes(attribute.String("id", id)))
+// EnableUser traces the "EnableUser" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) EnableUser(ctx context.Context, token, id string) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_enable_user", trace.WithAttributes(attribute.String("id", id)))
 	defer span.End()
 
-	return tm.svc.EnableClient(ctx, token, id)
+	return tm.svc.EnableUser(ctx, token, id)
 }
 
-// DisableClient traces the "DisableClient" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) DisableClient(ctx context.Context, token, id string) (mgclients.Client, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_disable_client", trace.WithAttributes(attribute.String("id", id)))
+// DisableUser traces the "DisableUser" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) DisableUser(ctx context.Context, token, id string) (users.User, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_disable_user", trace.WithAttributes(attribute.String("id", id)))
 	defer span.End()
 
-	return tm.svc.DisableClient(ctx, token, id)
+	return tm.svc.DisableUser(ctx, token, id)
 }
 
-// ListMembers traces the "ListMembers" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) ListMembers(ctx context.Context, token, objectKind, objectID string, pm mgclients.Page) (mgclients.MembersPage, error) {
+// ListMembers traces the "ListMembers" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) ListMembers(ctx context.Context, token, objectKind, objectID string, pm users.Page) (users.MembersPage, error) {
 	ctx, span := tm.tracer.Start(ctx, "svc_list_members", trace.WithAttributes(attribute.String("object_kind", objectKind)), trace.WithAttributes(attribute.String("object_id", objectID)))
 	defer span.End()
 
 	return tm.svc.ListMembers(ctx, token, objectKind, objectID, pm)
 }
 
-// Identify traces the "Identify" operation of the wrapped clients.Service.
+// Identify traces the "Identify" operation of the wrapped users.Service.
 func (tm *tracingMiddleware) Identify(ctx context.Context, token string) (string, error) {
 	ctx, span := tm.tracer.Start(ctx, "svc_identify", trace.WithAttributes(attribute.String("token", token)))
 	defer span.End()
@@ -201,20 +233,20 @@ func (tm *tracingMiddleware) Identify(ctx context.Context, token string) (string
 	return tm.svc.Identify(ctx, token)
 }
 
-// OAuthCallback traces the "OAuthCallback" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) OAuthCallback(ctx context.Context, client mgclients.Client) (*magistrala.Token, error) {
+// OAuthCallback traces the "OAuthCallback" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) OAuthCallback(ctx context.Context, user users.User) (*magistrala.Token, error) {
 	ctx, span := tm.tracer.Start(ctx, "svc_oauth_callback", trace.WithAttributes(
-		attribute.String("client_id", client.ID),
+		attribute.String("user_id", user.ID),
 	))
 	defer span.End()
 
-	return tm.svc.OAuthCallback(ctx, client)
+	return tm.svc.OAuthCallback(ctx, user)
 }
 
-// DeleteClient traces the "DeleteClient" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) DeleteClient(ctx context.Context, token, id string) error {
-	ctx, span := tm.tracer.Start(ctx, "svc_delete_client", trace.WithAttributes(attribute.String("id", id)))
+// DeleteUser traces the "DeleteUser" operation of the wrapped users.Service.
+func (tm *tracingMiddleware) DeleteUser(ctx context.Context, token, id string) error {
+	ctx, span := tm.tracer.Start(ctx, "svc_delete_user", trace.WithAttributes(attribute.String("id", id)))
 	defer span.End()
 
-	return tm.svc.DeleteClient(ctx, token, id)
+	return tm.svc.DeleteUser(ctx, token, id)
 }
