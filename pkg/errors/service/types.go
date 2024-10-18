@@ -35,7 +35,7 @@ var (
 	ErrRemoveEntity = errors.New("failed to remove entity")
 
 	// ErrViewEntity indicates error in viewing entity or entities.
-	ErrViewEntity = errors.New("view entity failed")
+	ErrViewEntity = errors.New("service error: view entity failed")
 
 	// ErrUpdateEntity indicates error in updating entity or entities.
 	ErrUpdateEntity = errors.New("update entity failed")
@@ -69,4 +69,10 @@ var (
 
 	// ErrInvitationAlreadyAccepted indicates that the invitation is already accepted.
 	ErrInvitationAlreadyAccepted = errors.New("invitation already accepted")
+
+	// ErrParentGroupAuthorization indicates failure occurred while authorizing the parent group.
+	ErrParentGroupAuthorization = errors.New("failed to authorize parent group")
+
+	// ErrMissingNames indicates that the user's names are missing.
+	ErrMissingNames = errors.New("missing user names")
 )

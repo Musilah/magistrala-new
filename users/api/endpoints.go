@@ -6,134 +6,177 @@ package api
 import (
 	"context"
 
+	"github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/pkg/apiutil"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
+	"github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/errors"
+	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/users"
 	"github.com/go-kit/kit/endpoint"
 )
 
-func registrationEndpoint(svc users.Service) endpoint.Endpoint {
+func registrationEndpoint(svc users.Service, selfRegister bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(createClientReq)
+		req := request.(createUserReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
+		session := authn.Session{}
 
-		client, err := svc.RegisterClient(ctx, req.token, req.client)
+		var ok bool
+		if !selfRegister {
+			session, ok = ctx.Value(api.SessionKey).(authn.Session)
+			if !ok {
+				return nil, svcerr.ErrAuthorization
+			}
+		}
+
+		user, err := svc.RegisterUser(ctx, session, req.user, selfRegister)
 		if err != nil {
 			return nil, err
 		}
 
-		return createClientRes{
-			Client:  client,
+		return createUserRes{
+			User:    user,
 			created: true,
 		}, nil
 	}
 }
 
-func viewClientEndpoint(svc users.Service) endpoint.Endpoint {
+func viewUserEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(viewClientReq)
+		req := request.(viewUserReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		client, err := svc.ViewClient(ctx, req.token, req.id)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+		user, err := svc.ViewUser(ctx, session, req.id)
 		if err != nil {
 			return nil, err
 		}
 
-		return viewClientRes{Client: client}, nil
+		return viewUserRes{User: user}, nil
 	}
 }
 
 func viewProfileEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(viewProfileReq)
-		if err := req.validate(); err != nil {
-			return nil, errors.Wrap(apiutil.ErrValidation, err)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
-
-		client, err := svc.ViewProfile(ctx, req.token)
+		client, err := svc.ViewProfile(ctx, session)
 		if err != nil {
 			return nil, err
 		}
 
-		return viewClientRes{Client: client}, nil
+		return viewUserRes{User: client}, nil
 	}
 }
 
-func listClientsEndpoint(svc users.Service) endpoint.Endpoint {
+func viewUserByUserNameEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(listClientsReq)
+		req := request.(viewUserByUserNameReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		pm := mgclients.Page{
-			Status:   req.status,
-			Offset:   req.offset,
-			Limit:    req.limit,
-			Name:     req.name,
-			Tag:      req.tag,
-			Metadata: req.metadata,
-			Identity: req.identity,
-			Order:    req.order,
-			Dir:      req.dir,
-			Id:       req.id,
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
-		page, err := svc.ListClients(ctx, req.token, pm)
+
+		user, err := svc.ViewUserByUserName(ctx, session, req.userName)
 		if err != nil {
 			return nil, err
 		}
 
-		res := clientsPageRes{
+		return viewUserRes{User: user}, nil
+	}
+}
+
+func listUsersEndpoint(svc users.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listUsersReq)
+		if err := req.validate(); err != nil {
+			return nil, errors.Wrap(apiutil.ErrValidation, err)
+		}
+
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		pm := users.Page{
+			Status:    req.status,
+			Offset:    req.offset,
+			Limit:     req.limit,
+			UserName:  req.userName,
+			Tag:       req.tag,
+			Metadata:  req.metadata,
+			FirstName: req.firstName,
+			LastName:  req.lastName,
+			Identity:  req.identity,
+			Order:     req.order,
+			Dir:       req.dir,
+			Id:        req.id,
+		}
+
+		page, err := svc.ListUsers(ctx, session, pm)
+		if err != nil {
+			return nil, err
+		}
+
+		res := usersPageRes{
 			pageRes: pageRes{
 				Total:  page.Total,
 				Offset: page.Offset,
 				Limit:  page.Limit,
 			},
-			Clients: []viewClientRes{},
+			Users: []viewUserRes{},
 		}
-		for _, client := range page.Clients {
-			res.Clients = append(res.Clients, viewClientRes{Client: client})
+		for _, user := range page.Users {
+			res.Users = append(res.Users, viewUserRes{User: user})
 		}
 
 		return res, nil
 	}
 }
 
-func searchClientsEndpoint(svc users.Service) endpoint.Endpoint {
+func searchUsersEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(searchClientsReq)
+		req := request.(searchUsersReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		pm := mgclients.Page{
-			Offset: req.Offset,
-			Limit:  req.Limit,
-			Name:   req.Name,
-			Id:     req.Id,
-			Order:  req.Order,
-			Dir:    req.Dir,
+		pm := users.Page{
+			Offset:   req.Offset,
+			Limit:    req.Limit,
+			UserName: req.UserName,
+			Id:       req.Id,
+			Order:    req.Order,
+			Dir:      req.Dir,
 		}
-		page, err := svc.SearchUsers(ctx, req.token, pm)
+		page, err := svc.SearchUsers(ctx, pm)
 		if err != nil {
 			return nil, err
 		}
 
-		res := clientsPageRes{
+		res := usersPageRes{
 			pageRes: pageRes{
 				Total:  page.Total,
 				Offset: page.Offset,
 				Limit:  page.Limit,
 			},
-			Clients: []viewClientRes{},
+			Users: []viewUserRes{},
 		}
-		for _, client := range page.Clients {
-			res.Clients = append(res.Clients, viewClientRes{Client: client})
+		for _, user := range page.Users {
+			res.Users = append(res.Users, viewUserRes{User: user})
 		}
 
 		return res, nil
@@ -148,12 +191,17 @@ func listMembersByGroupEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		page, err := svc.ListMembers(ctx, req.token, req.objectKind, req.objectID, req.Page)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
 			return nil, err
 		}
 
-		return buildClientsResponse(page), nil
+		return buildUsersResponse(page), nil
 	}
 }
 
@@ -166,12 +214,17 @@ func listMembersByChannelEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		page, err := svc.ListMembers(ctx, req.token, req.objectKind, req.objectID, req.Page)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
 			return nil, err
 		}
 
-		return buildClientsResponse(page), nil
+		return buildUsersResponse(page), nil
 	}
 }
 
@@ -183,12 +236,17 @@ func listMembersByThingEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		page, err := svc.ListMembers(ctx, req.token, req.objectKind, req.objectID, req.Page)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
 			return nil, err
 		}
 
-		return buildClientsResponse(page), nil
+		return buildUsersResponse(page), nil
 	}
 }
 
@@ -200,69 +258,93 @@ func listMembersByDomainEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		page, err := svc.ListMembers(ctx, req.token, req.objectKind, req.objectID, req.Page)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
 			return nil, err
 		}
 
-		return buildClientsResponse(page), nil
+		return buildUsersResponse(page), nil
 	}
 }
 
-func updateClientEndpoint(svc users.Service) endpoint.Endpoint {
+func updateUserEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(updateClientReq)
+		req := request.(updateUserReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		client := mgclients.Client{
-			ID:       req.id,
-			Name:     req.Name,
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		user := users.User{
+			ID: req.id,
+			Credentials: users.Credentials{
+				UserName: req.UserName,
+			},
 			Metadata: req.Metadata,
 		}
-		client, err := svc.UpdateClient(ctx, req.token, client)
+
+		user, err := svc.UpdateUser(ctx, session, user)
 		if err != nil {
 			return nil, err
 		}
 
-		return updateClientRes{Client: client}, nil
+		return updateUserRes{User: user}, nil
 	}
 }
 
-func updateClientTagsEndpoint(svc users.Service) endpoint.Endpoint {
+func updateUserTagsEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(updateClientTagsReq)
+		req := request.(updateUserTagsReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		client := mgclients.Client{
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		user := users.User{
 			ID:   req.id,
 			Tags: req.Tags,
 		}
-		client, err := svc.UpdateClientTags(ctx, req.token, client)
+
+		user, err := svc.UpdateUserTags(ctx, session, user)
 		if err != nil {
 			return nil, err
 		}
 
-		return updateClientRes{Client: client}, nil
+		return updateUserRes{User: user}, nil
 	}
 }
 
-func updateClientIdentityEndpoint(svc users.Service) endpoint.Endpoint {
+func updateUserIdentityEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(updateClientIdentityReq)
+		req := request.(updateUserIdentityReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		client, err := svc.UpdateClientIdentity(ctx, req.token, req.id, req.Identity)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		user, err := svc.UpdateUserIdentity(ctx, session, req.id, req.Identity)
 		if err != nil {
 			return nil, err
 		}
 
-		return updateClientRes{Client: client}, nil
+		return updateUserRes{User: user}, nil
 	}
 }
 
@@ -301,7 +383,11 @@ func passwordResetEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		if err := svc.ResetSecret(ctx, req.Token, req.Password); err != nil {
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+		if err := svc.ResetSecret(ctx, session, req.Password); err != nil {
 			return nil, err
 		}
 
@@ -309,45 +395,102 @@ func passwordResetEndpoint(svc users.Service) endpoint.Endpoint {
 	}
 }
 
-func updateClientSecretEndpoint(svc users.Service) endpoint.Endpoint {
+func updateUserSecretEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(updateClientSecretReq)
+		req := request.(updateUserSecretReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		client, err := svc.UpdateClientSecret(ctx, req.token, req.OldSecret, req.NewSecret)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+		user, err := svc.UpdateUserSecret(ctx, session, req.OldSecret, req.NewSecret)
 		if err != nil {
 			return nil, err
 		}
 
-		return updateClientRes{Client: client}, nil
+		return updateUserRes{User: user}, nil
 	}
 }
 
-func updateClientRoleEndpoint(svc users.Service) endpoint.Endpoint {
+func updateUserNamesEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(updateClientRoleReq)
+		req := request.(updateUserNamesReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		client := mgclients.Client{
-			ID:   req.id,
-			Role: req.role,
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
-		client, err := svc.UpdateClientRole(ctx, req.token, client)
+
+		user, err := svc.UpdateUserNames(ctx, session, req.User)
 		if err != nil {
 			return nil, err
 		}
 
-		return updateClientRes{Client: client}, nil
+		return updateUserRes{User: user}, nil
+	}
+}
+
+func updateProfilePictureEndpoint(svc users.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(updateProfilePictureReq)
+		if err := req.validate(); err != nil {
+			return nil, errors.Wrap(apiutil.ErrValidation, err)
+		}
+
+		user := users.User{
+			ID:             req.id,
+			ProfilePicture: req.ProfilePicture,
+		}
+
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		user, err := svc.UpdateUser(ctx, session, user)
+		if err != nil {
+			return nil, err
+		}
+
+		return updateUserRes{User: user}, nil
+	}
+}
+
+func updateUserRoleEndpoint(svc users.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(updateUserRoleReq)
+		if err := req.validate(); err != nil {
+			return nil, errors.Wrap(apiutil.ErrValidation, err)
+		}
+
+		user := users.User{
+			ID:   req.id,
+			Role: req.role,
+		}
+
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		user, err := svc.UpdateUserRole(ctx, session, user)
+		if err != nil {
+			return nil, err
+		}
+
+		return updateUserRes{User: user}, nil
 	}
 }
 
 func issueTokenEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(loginClientReq)
+		req := request.(loginUserReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
@@ -372,7 +515,12 @@ func refreshTokenEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		token, err := svc.RefreshToken(ctx, req.RefreshToken, req.DomainID)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		token, err := svc.RefreshToken(ctx, session, req.RefreshToken, req.DomainID)
 		if err != nil {
 			return nil, err
 		}
@@ -385,65 +533,80 @@ func refreshTokenEndpoint(svc users.Service) endpoint.Endpoint {
 	}
 }
 
-func enableClientEndpoint(svc users.Service) endpoint.Endpoint {
+func enableUserEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(changeClientStatusReq)
+		req := request.(changeUserStatusReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		client, err := svc.EnableClient(ctx, req.token, req.id)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		user, err := svc.EnableUser(ctx, session, req.id)
 		if err != nil {
 			return nil, err
 		}
 
-		return changeClientStatusClientRes{Client: client}, nil
+		return changeUserStatusRes{User: user}, nil
 	}
 }
 
-func disableClientEndpoint(svc users.Service) endpoint.Endpoint {
+func disableUserEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(changeClientStatusReq)
+		req := request.(changeUserStatusReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		client, err := svc.DisableClient(ctx, req.token, req.id)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		user, err := svc.DisableUser(ctx, session, req.id)
 		if err != nil {
 			return nil, err
 		}
 
-		return changeClientStatusClientRes{Client: client}, nil
+		return changeUserStatusRes{User: user}, nil
 	}
 }
 
-func deleteClientEndpoint(svc users.Service) endpoint.Endpoint {
+func deleteUserEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(changeClientStatusReq)
+		req := request.(changeUserStatusReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		if err := svc.DeleteClient(ctx, req.token, req.id); err != nil {
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		if err := svc.DeleteUser(ctx, session, req.id); err != nil {
 			return nil, err
 		}
 
-		return deleteClientRes{true}, nil
+		return deleteUserRes{true}, nil
 	}
 }
 
-func buildClientsResponse(cp mgclients.MembersPage) clientsPageRes {
-	res := clientsPageRes{
+func buildUsersResponse(cp users.MembersPage) usersPageRes {
+	res := usersPageRes{
 		pageRes: pageRes{
 			Total:  cp.Total,
 			Offset: cp.Offset,
 			Limit:  cp.Limit,
 		},
-		Clients: []viewClientRes{},
+		Users: []viewUserRes{},
 	}
 
-	for _, client := range cp.Members {
-		res.Clients = append(res.Clients, viewClientRes{Client: client})
+	for _, user := range cp.Members {
+		res.Users = append(res.Users, viewUserRes{User: user})
 	}
 
 	return res

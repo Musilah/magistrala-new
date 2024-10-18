@@ -10,6 +10,7 @@ import (
 
 	"github.com/absmach/magistrala"
 	"github.com/absmach/magistrala/bootstrap"
+	"github.com/absmach/magistrala/certs"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/errors"
@@ -29,11 +30,13 @@ const (
 	ParentKey        = "parent_id"
 	OwnerKey         = "owner_id"
 	ClientKey        = "client"
-	IdentityKey      = "identity"
+	UserNameKey      = "user_name"
+	NameKey          = "name"
 	GroupKey         = "group"
 	ActionKey        = "action"
 	TagKey           = "tag"
-	NameKey          = "name"
+	FirstNameKey     = "first_name"
+	LastNameKey      = "last_name"
 	TotalKey         = "total"
 	SubjectKey       = "subject"
 	ObjectKey        = "object"
@@ -42,6 +45,7 @@ const (
 	DirKey           = "dir"
 	ListPerms        = "list_perms"
 	VisibilityKey    = "visibility"
+	IdentityKey      = "identity"
 	SharedByKey      = "shared_by"
 	TokenKey         = "token"
 	DefPermission    = "view"
@@ -162,7 +166,8 @@ func EncodeError(_ context.Context, err error, w http.ResponseWriter) {
 		errors.Contains(err, apiutil.ErrInvalidTimeFormat),
 		errors.Contains(err, svcerr.ErrSearch),
 		errors.Contains(err, apiutil.ErrEmptySearchQuery),
-		errors.Contains(err, apiutil.ErrLenSearchQuery):
+		errors.Contains(err, apiutil.ErrLenSearchQuery),
+		errors.Contains(err, certs.ErrFailedReadFromPKI):
 		err = unwrap(err)
 		w.WriteHeader(http.StatusBadRequest)
 

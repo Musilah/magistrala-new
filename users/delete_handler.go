@@ -15,26 +15,26 @@ import (
 	"time"
 
 	"github.com/absmach/magistrala"
-	"github.com/absmach/magistrala/auth"
-	mgclients "github.com/absmach/magistrala/pkg/clients"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
-	"github.com/absmach/magistrala/users/postgres"
+	"github.com/absmach/magistrala/pkg/policies"
 )
 
 const defLimit = uint64(100)
 
 type handler struct {
-	clients       postgres.Repository
-	policy        magistrala.PolicyServiceClient
+	users         Repository
+	domains       magistrala.DomainsServiceClient
+	policies      policies.Service
 	checkInterval time.Duration
 	deleteAfter   time.Duration
 	logger        *slog.Logger
 }
 
-func NewDeleteHandler(ctx context.Context, clients postgres.Repository, policyClient magistrala.PolicyServiceClient, defCheckInterval, deleteAfter time.Duration, logger *slog.Logger) {
+func NewDeleteHandler(ctx context.Context, users Repository, policyService policies.Service, domainsClient magistrala.DomainsServiceClient, defCheckInterval, deleteAfter time.Duration, logger *slog.Logger) {
 	handler := &handler{
-		clients:       clients,
-		policy:        policyClient,
+		users:         users,
+		domains:       domainsClient,
+		policies:      policyService,
 		checkInterval: defCheckInterval,
 		deleteAfter:   deleteAfter,
 		logger:        logger,
@@ -56,10 +56,10 @@ func NewDeleteHandler(ctx context.Context, clients postgres.Repository, policyCl
 }
 
 func (h *handler) handle(ctx context.Context) {
-	pm := mgclients.Page{Limit: defLimit, Offset: 0, Status: mgclients.DeletedStatus}
+	pm := Page{Limit: defLimit, Offset: 0, Status: DeletedStatus}
 
 	for {
-		dbUsers, err := h.clients.RetrieveAll(ctx, pm)
+		dbUsers, err := h.users.RetrieveAll(ctx, pm)
 		if err != nil {
 			h.logger.Error("failed to retrieve users", slog.Any("error", err))
 			break
@@ -68,32 +68,41 @@ func (h *handler) handle(ctx context.Context) {
 			break
 		}
 
-		for _, u := range dbUsers.Clients {
+		for _, u := range dbUsers.Users {
 			if time.Since(u.UpdatedAt) < h.deleteAfter {
 				continue
 			}
 
-			deleteRes, err := h.policy.DeleteEntityPolicies(ctx, &magistrala.DeleteEntityPoliciesReq{
-				Id:         u.ID,
-				EntityType: auth.UserType,
+			deletedRes, err := h.domains.DeleteUserFromDomains(ctx, &magistrala.DeleteUserReq{
+				Id: u.ID,
 			})
 			if err != nil {
-				h.logger.Error("failed to delete user policies", slog.Any("error", err))
+				h.logger.Error("failed to delete user from domains", slog.Any("error", err))
 				continue
 			}
-			if !deleteRes.Deleted {
-				h.logger.Error("failed to delete user policies", slog.Any("error", svcerr.ErrAuthorization))
+			if !deletedRes.Deleted {
+				h.logger.Error("failed to delete user from domains", slog.Any("error", svcerr.ErrAuthorization))
 				continue
 			}
 
-			if err := h.clients.Delete(ctx, u.ID); err != nil {
+			req := policies.Policy{
+				Subject:     u.ID,
+				SubjectType: policies.UserType,
+			}
+			if err := h.policies.DeletePolicyFilter(ctx, req); err != nil {
+				h.logger.Error("failed to delete user policies", slog.Any("error", err))
+				continue
+			}
+
+			if err := h.users.Delete(ctx, u.ID); err != nil {
 				h.logger.Error("failed to delete user", slog.Any("error", err))
 				continue
 			}
 
 			h.logger.Info("user deleted", slog.Group("user",
 				slog.String("id", u.ID),
-				slog.String("name", u.Name),
+				slog.String("first_name", u.FirstName),
+				slog.String("last_name", u.LastName),
 			))
 		}
 	}

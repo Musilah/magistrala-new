@@ -10,12 +10,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/absmach/magistrala/internal/testsutil"
 	"github.com/absmach/magistrala/invitations"
 	"github.com/absmach/magistrala/journal"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	mggroups "github.com/absmach/magistrala/pkg/groups"
 	sdk "github.com/absmach/magistrala/pkg/sdk/go"
 	"github.com/absmach/magistrala/pkg/uuid"
+	"github.com/absmach/magistrala/users"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,19 +28,22 @@ const (
 	token           = "token"
 	invalidToken    = "invalid"
 	contentType     = "application/senml+json"
+	invalid         = "invalid"
+	wrongID         = "wrongID"
 )
 
 var (
-	idProvider    = uuid.New()
-	validMetadata = sdk.Metadata{"role": "client"}
-	user          = generateTestUser(&testing.T{})
-	description   = "shortdescription"
-	gName         = "groupname"
-
-	limit     uint64 = 5
-	offset    uint64 = 0
-	total     uint64 = 200
-	passRegex        = regexp.MustCompile("^.{8,}$")
+	idProvider           = uuid.New()
+	validMetadata        = sdk.Metadata{"role": "client"}
+	user                 = generateTestUser(&testing.T{})
+	description          = "shortdescription"
+	gName                = "groupname"
+	validToken           = "valid"
+	limit         uint64 = 5
+	offset        uint64 = 0
+	total         uint64 = 200
+	passRegex            = regexp.MustCompile("^.{8,}$")
+	validID              = testsutil.GenerateUUID(&testing.T{})
 )
 
 func generateUUID(t *testing.T) string {
@@ -48,11 +53,11 @@ func generateUUID(t *testing.T) string {
 	return ulid
 }
 
-func convertClients(cs []sdk.User) []mgclients.Client {
-	ccs := []mgclients.Client{}
+func convertUsers(cs []sdk.User) []users.User {
+	ccs := []users.User{}
 
 	for _, c := range cs {
-		ccs = append(ccs, convertClient(c))
+		ccs = append(ccs, convertUser(c))
 	}
 
 	return ccs
@@ -128,29 +133,31 @@ func convertChildren(gs []*sdk.Group) []*mggroups.Group {
 	return cg
 }
 
-func convertClient(c sdk.User) mgclients.Client {
+func convertUser(c sdk.User) users.User {
 	if c.Status == "" {
-		c.Status = mgclients.EnabledStatus.String()
+		c.Status = users.EnabledStatus.String()
 	}
-	status, err := mgclients.ToStatus(c.Status)
+	status, err := users.ToStatus(c.Status)
 	if err != nil {
-		return mgclients.Client{}
+		return users.User{}
 	}
-	role, err := mgclients.ToRole(c.Role)
+	role, err := users.ToRole(c.Role)
 	if err != nil {
-		return mgclients.Client{}
+		return users.User{}
 	}
-	return mgclients.Client{
-		ID:          c.ID,
-		Name:        c.Name,
-		Tags:        c.Tags,
-		Domain:      c.Domain,
-		Credentials: mgclients.Credentials(c.Credentials),
-		Metadata:    mgclients.Metadata(c.Metadata),
-		CreatedAt:   c.CreatedAt,
-		UpdatedAt:   c.UpdatedAt,
-		Status:      status,
-		Role:        role,
+	return users.User{
+		ID:             c.ID,
+		FirstName:      c.FirstName,
+		LastName:       c.LastName,
+		Tags:           c.Tags,
+		DomainID:       c.Domain,
+		Credentials:    users.Credentials(c.Credentials),
+		Metadata:       users.Metadata(c.Metadata),
+		CreatedAt:      c.CreatedAt,
+		UpdatedAt:      c.UpdatedAt,
+		Status:         status,
+		Role:           role,
+		ProfilePicture: c.ProfilePicture,
 	}
 }
 
@@ -167,7 +174,7 @@ func convertThing(c sdk.Thing) mgclients.Client {
 		Name:        c.Name,
 		Tags:        c.Tags,
 		Domain:      c.DomainID,
-		Credentials: mgclients.Credentials(c.Credentials),
+		Credentials: mgclients.Credentials(c.Credentials), // small fix
 		Metadata:    mgclients.Metadata(c.Metadata),
 		CreatedAt:   c.CreatedAt,
 		UpdatedAt:   c.UpdatedAt,
@@ -226,17 +233,18 @@ func generateTestUser(t *testing.T) sdk.User {
 	createdAt, err := time.Parse(time.RFC3339, "2024-01-01T00:00:00Z")
 	assert.Nil(t, err, fmt.Sprintf("Unexpected error parsing time: %v", err))
 	return sdk.User{
-		ID:   generateUUID(t),
-		Name: "clientname",
+		ID:        generateUUID(t),
+		FirstName: "clientname",
+		LastName:  "clientlastname",
 		Credentials: sdk.Credentials{
-			Identity: "clientidentity@email.com",
+			UserName: "clientusername",
 			Secret:   secret,
 		},
 		Tags:      []string{"tag1", "tag2"},
 		Metadata:  validMetadata,
 		CreatedAt: createdAt,
 		UpdatedAt: createdAt,
-		Status:    mgclients.EnabledStatus.String(),
+		Status:    users.EnabledStatus.String(),
 	}
 }
 
