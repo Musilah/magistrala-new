@@ -31,11 +31,11 @@ var (
 
 var cmdProvision = []cobra.Command{
 	{
-		Use:   "things <things_file> <user_token>",
+		Use:   "things <things_file> <domain_id> <user_token>",
 		Short: "Provision things",
 		Long:  `Bulk create things`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if len(args) != 2 {
+			if len(args) != 3 {
 				logUsageCmd(*cmd, cmd.Use)
 				return
 			}
@@ -51,7 +51,7 @@ var cmdProvision = []cobra.Command{
 				return
 			}
 
-			things, err = sdk.CreateThings(things, args[1])
+			things, err = sdk.CreateThings(things, args[1], args[2])
 			if err != nil {
 				logErrorCmd(*cmd, err)
 				return
@@ -61,11 +61,11 @@ var cmdProvision = []cobra.Command{
 		},
 	},
 	{
-		Use:   "channels <channels_file> <user_token>",
+		Use:   "channels <channels_file> <domain_id> <user_token>",
 		Short: "Provision channels",
 		Long:  `Bulk create channels`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if len(args) != 2 {
+			if len(args) != 3 {
 				logUsageCmd(*cmd, cmd.Use)
 				return
 			}
@@ -78,7 +78,7 @@ var cmdProvision = []cobra.Command{
 
 			var chs []mgxsdk.Channel
 			for _, c := range channels {
-				c, err = sdk.CreateChannel(c, args[1])
+				c, err = sdk.CreateChannel(c, args[1], args[2])
 				if err != nil {
 					logErrorCmd(*cmd, err)
 					return
@@ -91,11 +91,11 @@ var cmdProvision = []cobra.Command{
 		},
 	},
 	{
-		Use:   "connect <connections_file> <user_token>",
+		Use:   "connect <connections_file> <domain_id> <user_token>",
 		Short: "Provision connections",
 		Long:  `Bulk connect things to channels`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if len(args) != 2 {
+			if len(args) != 3 {
 				logUsageCmd(*cmd, cmd.Use)
 				return
 			}
@@ -106,7 +106,7 @@ var cmdProvision = []cobra.Command{
 				return
 			}
 			for _, conn := range connIDs {
-				if err := sdk.Connect(conn, args[1]); err != nil {
+				if err := sdk.Connect(conn, args[1], args[2]); err != nil {
 					logErrorCmd(*cmd, err)
 					return
 				}
@@ -135,9 +135,10 @@ var cmdProvision = []cobra.Command{
 			// Create test user
 			name := namesgenerator.Generate()
 			user := mgxsdk.User{
-				Name: name,
+				FirstName: name,
+				Email:     fmt.Sprintf("%s@email.com", name),
 				Credentials: mgxsdk.Credentials{
-					Identity: fmt.Sprintf("%s@email.com", name),
+					Username: name,
 					Secret:   "12345678",
 				},
 				Status: mgxsdk.EnabledStatus,
@@ -149,7 +150,7 @@ var cmdProvision = []cobra.Command{
 			}
 
 			user.Credentials.Secret = "12345678"
-			ut, err := sdk.CreateToken(mgxsdk.Login{Identity: user.Credentials.Identity, Secret: user.Credentials.Secret})
+			ut, err := sdk.CreateToken(mgxsdk.Login{Email: user.Email, Secret: user.Credentials.Secret})
 			if err != nil {
 				logErrorCmd(*cmd, err)
 				return
@@ -167,7 +168,7 @@ var cmdProvision = []cobra.Command{
 			}
 
 			// domain login
-			ut, err = sdk.CreateToken(mgxsdk.Login{Identity: user.Credentials.Identity, Secret: user.Credentials.Secret, DomainID: domain.ID})
+			ut, err = sdk.CreateToken(mgxsdk.Login{Email: user.Email, Secret: user.Credentials.Secret, DomainID: domain.ID})
 			if err != nil {
 				logErrorCmd(*cmd, err)
 				return
@@ -182,7 +183,7 @@ var cmdProvision = []cobra.Command{
 
 				things = append(things, t)
 			}
-			things, err = sdk.CreateThings(things, ut.AccessToken)
+			things, err = sdk.CreateThings(things, domain.ID, ut.AccessToken)
 			if err != nil {
 				logErrorCmd(*cmd, err)
 				return
@@ -194,7 +195,7 @@ var cmdProvision = []cobra.Command{
 					Name:   fmt.Sprintf("%s-channel-%d", name, i),
 					Status: mgxsdk.EnabledStatus,
 				}
-				c, err = sdk.CreateChannel(c, ut.AccessToken)
+				c, err = sdk.CreateChannel(c, domain.ID, ut.AccessToken)
 				if err != nil {
 					logErrorCmd(*cmd, err)
 					return
@@ -208,7 +209,7 @@ var cmdProvision = []cobra.Command{
 				ChannelID: channels[0].ID,
 				ThingID:   things[0].ID,
 			}
-			if err := sdk.Connect(conIDs, ut.AccessToken); err != nil {
+			if err := sdk.Connect(conIDs, domain.ID, ut.AccessToken); err != nil {
 				logErrorCmd(*cmd, err)
 				return
 			}
@@ -217,7 +218,7 @@ var cmdProvision = []cobra.Command{
 				ChannelID: channels[1].ID,
 				ThingID:   things[0].ID,
 			}
-			if err := sdk.Connect(conIDs, ut.AccessToken); err != nil {
+			if err := sdk.Connect(conIDs, domain.ID, ut.AccessToken); err != nil {
 				logErrorCmd(*cmd, err)
 				return
 			}
@@ -226,7 +227,7 @@ var cmdProvision = []cobra.Command{
 				ChannelID: channels[0].ID,
 				ThingID:   things[1].ID,
 			}
-			if err := sdk.Connect(conIDs, ut.AccessToken); err != nil {
+			if err := sdk.Connect(conIDs, domain.ID, ut.AccessToken); err != nil {
 				logErrorCmd(*cmd, err)
 				return
 			}

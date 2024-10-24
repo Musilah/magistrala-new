@@ -77,7 +77,7 @@ func Test(conf Config) {
 
 	magenta := color.FgLightMagenta.Render
 
-	token, err := createUser(s, conf)
+	domainID, token, err := createUser(s, conf)
 	if err != nil {
 		errExit(fmt.Errorf("unable to create user: %w", err))
 	}
@@ -89,38 +89,38 @@ func Test(conf Config) {
 	}
 	color.Success.Printf("created users of ids:\n%s\n", magenta(getIDS(users)))
 
-	groups, err := createGroups(s, conf, token)
+	groups, err := createGroups(s, conf, domainID, token)
 	if err != nil {
 		errExit(fmt.Errorf("unable to create groups: %w", err))
 	}
 	color.Success.Printf("created groups of ids:\n%s\n", magenta(getIDS(groups)))
 
-	things, err := createThings(s, conf, token)
+	things, err := createThings(s, conf, domainID, token)
 	if err != nil {
 		errExit(fmt.Errorf("unable to create things: %w", err))
 	}
 	color.Success.Printf("created things of ids:\n%s\n", magenta(getIDS(things)))
 
-	channels, err := createChannels(s, conf, token)
+	channels, err := createChannels(s, conf, domainID, token)
 	if err != nil {
 		errExit(fmt.Errorf("unable to create channels: %w", err))
 	}
 	color.Success.Printf("created channels of ids:\n%s\n", magenta(getIDS(channels)))
 
 	// List users, groups, things and channels
-	if err := read(s, conf, token, users, groups, things, channels); err != nil {
+	if err := read(s, conf, domainID, token, users, groups, things, channels); err != nil {
 		errExit(fmt.Errorf("unable to read users, groups, things and channels: %w", err))
 	}
 	color.Success.Println("viewed users, groups, things and channels")
 
 	// Update users, groups, things and channels
-	if err := update(s, token, users, groups, things, channels); err != nil {
+	if err := update(s, domainID, token, users, groups, things, channels); err != nil {
 		errExit(fmt.Errorf("unable to update users, groups, things and channels: %w", err))
 	}
 	color.Success.Println("updated users, groups, things and channels")
 
 	// Send messages to channels
-	if err := messaging(s, conf, token, things, channels); err != nil {
+	if err := messaging(s, conf, domainID, token, things, channels); err != nil {
 		errExit(fmt.Errorf("unable to send messages to channels: %w", err))
 	}
 	color.Success.Println("sent messages to channels")
@@ -131,11 +131,13 @@ func errExit(err error) {
 	os.Exit(1)
 }
 
-func createUser(s sdk.SDK, conf Config) (string, error) {
+func createUser(s sdk.SDK, conf Config) (string, string, error) {
 	user := sdk.User{
-		Name: fmt.Sprintf("%s%s", conf.Prefix, namesgenerator.Generate()),
+		FirstName: fmt.Sprintf("%s%s", conf.Prefix, namesgenerator.Generate()),
+		LastName:  fmt.Sprintf("%s%s", conf.Prefix, namesgenerator.Generate()),
+		Email:     fmt.Sprintf("%s%s@email.com", conf.Prefix, namesgenerator.Generate()),
 		Credentials: sdk.Credentials{
-			Identity: fmt.Sprintf("%s%s@email.com", conf.Prefix, namesgenerator.Generate()),
+			Username: fmt.Sprintf("%s%s", conf.Prefix, namesgenerator.Generate()),
 			Secret:   defPass,
 		},
 		Status: sdk.EnabledStatus,
@@ -143,16 +145,16 @@ func createUser(s sdk.SDK, conf Config) (string, error) {
 	}
 
 	if _, err := s.CreateUser(user, ""); err != nil {
-		return "", fmt.Errorf("unable to create user: %w", err)
+		return "", "", fmt.Errorf("unable to create user: %w", err)
 	}
 
 	login := sdk.Login{
-		Identity: user.Credentials.Identity,
-		Secret:   user.Credentials.Secret,
+		Email:  user.Email,
+		Secret: user.Credentials.Secret,
 	}
 	token, err := s.CreateToken(login)
 	if err != nil {
-		return "", fmt.Errorf("unable to login user: %w", err)
+		return "", "", fmt.Errorf("unable to login user: %w", err)
 	}
 
 	dname := fmt.Sprintf("%s%s", conf.Prefix, namesgenerator.Generate())
@@ -164,20 +166,20 @@ func createUser(s sdk.SDK, conf Config) (string, error) {
 
 	domain, err = s.CreateDomain(domain, token.AccessToken)
 	if err != nil {
-		return "", fmt.Errorf("unable to create domain: %w", err)
+		return "", "", fmt.Errorf("unable to create domain: %w", err)
 	}
 
 	login = sdk.Login{
-		Identity: user.Credentials.Identity,
+		Email:    user.Email,
 		Secret:   user.Credentials.Secret,
 		DomainID: domain.ID,
 	}
 	token, err = s.CreateToken(login)
 	if err != nil {
-		return "", fmt.Errorf("unable to login user: %w", err)
+		return "", "", fmt.Errorf("unable to login user: %w", err)
 	}
 
-	return token.AccessToken, nil
+	return domain.ID, token.AccessToken, nil
 }
 
 func createUsers(s sdk.SDK, conf Config, token string) ([]sdk.User, error) {
@@ -186,9 +188,11 @@ func createUsers(s sdk.SDK, conf Config, token string) ([]sdk.User, error) {
 
 	for i := uint64(0); i < conf.Num; i++ {
 		user := sdk.User{
-			Name: fmt.Sprintf("%s%s", conf.Prefix, namesgenerator.Generate()),
+			FirstName: fmt.Sprintf("%s%s", conf.Prefix, namesgenerator.Generate()),
+			LastName:  fmt.Sprintf("%s%s", conf.Prefix, namesgenerator.Generate()),
+			Email:     fmt.Sprintf("%s%s@email.com", conf.Prefix, namesgenerator.Generate()),
 			Credentials: sdk.Credentials{
-				Identity: fmt.Sprintf("%s%s@email.com", conf.Prefix, namesgenerator.Generate()),
+				Username: fmt.Sprintf("%s%s", conf.Prefix, namesgenerator.Generate()),
 				Secret:   defPass,
 			},
 			Status: sdk.EnabledStatus,
@@ -204,7 +208,7 @@ func createUsers(s sdk.SDK, conf Config, token string) ([]sdk.User, error) {
 	return users, nil
 }
 
-func createGroups(s sdk.SDK, conf Config, token string) ([]sdk.Group, error) {
+func createGroups(s sdk.SDK, conf Config, domainID, token string) ([]sdk.Group, error) {
 	var err error
 	groups := []sdk.Group{}
 
@@ -214,7 +218,7 @@ func createGroups(s sdk.SDK, conf Config, token string) ([]sdk.Group, error) {
 			Status: sdk.EnabledStatus,
 		}
 
-		group, err = s.CreateGroup(group, token)
+		group, err = s.CreateGroup(group, domainID, token)
 		if err != nil {
 			return []sdk.Group{}, fmt.Errorf("failed to create the group: %w", err)
 		}
@@ -224,7 +228,7 @@ func createGroups(s sdk.SDK, conf Config, token string) ([]sdk.Group, error) {
 	return groups, nil
 }
 
-func createThingsInBatch(s sdk.SDK, conf Config, token string, num uint64) ([]sdk.Thing, error) {
+func createThingsInBatch(s sdk.SDK, conf Config, domainID, token string, num uint64) ([]sdk.Thing, error) {
 	var err error
 	things := make([]sdk.Thing, num)
 
@@ -234,7 +238,7 @@ func createThingsInBatch(s sdk.SDK, conf Config, token string, num uint64) ([]sd
 		}
 	}
 
-	things, err = s.CreateThings(things, token)
+	things, err = s.CreateThings(things, domainID, token)
 	if err != nil {
 		return []sdk.Thing{}, fmt.Errorf("failed to create the things: %w", err)
 	}
@@ -242,27 +246,27 @@ func createThingsInBatch(s sdk.SDK, conf Config, token string, num uint64) ([]sd
 	return things, nil
 }
 
-func createThings(s sdk.SDK, conf Config, token string) ([]sdk.Thing, error) {
+func createThings(s sdk.SDK, conf Config, domainID, token string) ([]sdk.Thing, error) {
 	things := []sdk.Thing{}
 
 	if conf.Num > batchSize {
 		batches := int(conf.Num) / batchSize
 		for i := 0; i < batches; i++ {
-			ths, err := createThingsInBatch(s, conf, token, batchSize)
+			ths, err := createThingsInBatch(s, conf, domainID, token, batchSize)
 			if err != nil {
-				return []sdk.Thing{}, fmt.Errorf("Failed to create the things: %w", err)
+				return []sdk.Thing{}, fmt.Errorf("failed to create the things: %w", err)
 			}
 			things = append(things, ths...)
 		}
-		ths, err := createThingsInBatch(s, conf, token, conf.Num%uint64(batchSize))
+		ths, err := createThingsInBatch(s, conf, domainID, token, conf.Num%uint64(batchSize))
 		if err != nil {
-			return []sdk.Thing{}, fmt.Errorf("Failed to create the things: %w", err)
+			return []sdk.Thing{}, fmt.Errorf("failed to create the things: %w", err)
 		}
 		things = append(things, ths...)
 	} else {
-		ths, err := createThingsInBatch(s, conf, token, conf.Num)
+		ths, err := createThingsInBatch(s, conf, domainID, token, conf.Num)
 		if err != nil {
-			return []sdk.Thing{}, fmt.Errorf("Failed to create the things: %w", err)
+			return []sdk.Thing{}, fmt.Errorf("failed to create the things: %w", err)
 		}
 		things = append(things, ths...)
 	}
@@ -270,7 +274,7 @@ func createThings(s sdk.SDK, conf Config, token string) ([]sdk.Thing, error) {
 	return things, nil
 }
 
-func createChannelsInBatch(s sdk.SDK, conf Config, token string, num uint64) ([]sdk.Channel, error) {
+func createChannelsInBatch(s sdk.SDK, conf Config, domainID, token string, num uint64) ([]sdk.Channel, error) {
 	var err error
 	channels := make([]sdk.Channel, num)
 
@@ -278,7 +282,7 @@ func createChannelsInBatch(s sdk.SDK, conf Config, token string, num uint64) ([]
 		channels[i] = sdk.Channel{
 			Name: fmt.Sprintf("%s%s", conf.Prefix, namesgenerator.Generate()),
 		}
-		channels[i], err = s.CreateChannel(channels[i], token)
+		channels[i], err = s.CreateChannel(channels[i], domainID, token)
 		if err != nil {
 			return []sdk.Channel{}, fmt.Errorf("failed to create the channels: %w", err)
 		}
@@ -287,27 +291,27 @@ func createChannelsInBatch(s sdk.SDK, conf Config, token string, num uint64) ([]
 	return channels, nil
 }
 
-func createChannels(s sdk.SDK, conf Config, token string) ([]sdk.Channel, error) {
+func createChannels(s sdk.SDK, conf Config, domainID, token string) ([]sdk.Channel, error) {
 	channels := []sdk.Channel{}
 
 	if conf.Num > batchSize {
 		batches := int(conf.Num) / batchSize
 		for i := 0; i < batches; i++ {
-			chs, err := createChannelsInBatch(s, conf, token, batchSize)
+			chs, err := createChannelsInBatch(s, conf, token, domainID, batchSize)
 			if err != nil {
-				return []sdk.Channel{}, fmt.Errorf("Failed to create the channels: %w", err)
+				return []sdk.Channel{}, fmt.Errorf("failed to create the channels: %w", err)
 			}
 			channels = append(channels, chs...)
 		}
-		chs, err := createChannelsInBatch(s, conf, token, conf.Num%uint64(batchSize))
+		chs, err := createChannelsInBatch(s, conf, domainID, token, conf.Num%uint64(batchSize))
 		if err != nil {
-			return []sdk.Channel{}, fmt.Errorf("Failed to create the channels: %w", err)
+			return []sdk.Channel{}, fmt.Errorf("failed to create the channels: %w", err)
 		}
 		channels = append(channels, chs...)
 	} else {
-		chs, err := createChannelsInBatch(s, conf, token, conf.Num)
+		chs, err := createChannelsInBatch(s, conf, domainID, token, conf.Num)
 		if err != nil {
-			return []sdk.Channel{}, fmt.Errorf("Failed to create the channels: %w", err)
+			return []sdk.Channel{}, fmt.Errorf("failed to create the channels: %w", err)
 		}
 		channels = append(channels, chs...)
 	}
@@ -315,7 +319,7 @@ func createChannels(s sdk.SDK, conf Config, token string) ([]sdk.Channel, error)
 	return channels, nil
 }
 
-func read(s sdk.SDK, conf Config, token string, users []sdk.User, groups []sdk.Group, things []sdk.Thing, channels []sdk.Channel) error {
+func read(s sdk.SDK, conf Config, domainID, token string, users []sdk.User, groups []sdk.Group, things []sdk.Thing, channels []sdk.Channel) error {
 	for _, user := range users {
 		if _, err := s.User(user.ID, token); err != nil {
 			return fmt.Errorf("failed to get user %w", err)
@@ -329,7 +333,7 @@ func read(s sdk.SDK, conf Config, token string, users []sdk.User, groups []sdk.G
 		return fmt.Errorf("returned users %d less than created users %d", up.Total, conf.Num)
 	}
 	for _, group := range groups {
-		if _, err := s.Group(group.ID, token); err != nil {
+		if _, err := s.Group(group.ID, domainID, token); err != nil {
 			return fmt.Errorf("failed to get group %w", err)
 		}
 	}
@@ -341,7 +345,7 @@ func read(s sdk.SDK, conf Config, token string, users []sdk.User, groups []sdk.G
 		return fmt.Errorf("returned groups %d less than created groups %d", gp.Total, conf.Num)
 	}
 	for _, thing := range things {
-		if _, err := s.Thing(thing.ID, token); err != nil {
+		if _, err := s.Thing(thing.ID, domainID, token); err != nil {
 			return fmt.Errorf("failed to get thing %w", err)
 		}
 	}
@@ -353,11 +357,13 @@ func read(s sdk.SDK, conf Config, token string, users []sdk.User, groups []sdk.G
 		return fmt.Errorf("returned things %d less than created things %d", tp.Total, conf.Num)
 	}
 	for _, channel := range channels {
-		if _, err := s.Channel(channel.ID, token); err != nil {
+		if _, err := s.Channel(channel.ID, domainID, token); err != nil {
 			return fmt.Errorf("failed to get channel %w", err)
 		}
 	}
-	cp, err := s.Channels(sdk.PageMetadata{}, token)
+	cp, err := s.Channels(sdk.PageMetadata{
+		DomainID: domainID,
+	}, token)
 	if err != nil {
 		return fmt.Errorf("failed to get channels %w", err)
 	}
@@ -368,28 +374,36 @@ func read(s sdk.SDK, conf Config, token string, users []sdk.User, groups []sdk.G
 	return nil
 }
 
-func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, things []sdk.Thing, channels []sdk.Channel) error {
+func update(s sdk.SDK, domainID, token string, users []sdk.User, groups []sdk.Group, things []sdk.Thing, channels []sdk.Channel) error {
 	for _, user := range users {
-		user.Name = namesgenerator.Generate()
+		user.FirstName = namesgenerator.Generate()
 		user.Metadata = sdk.Metadata{"Update": namesgenerator.Generate()}
 		rUser, err := s.UpdateUser(user, token)
 		if err != nil {
 			return fmt.Errorf("failed to update user %w", err)
 		}
-		if rUser.Name != user.Name {
-			return fmt.Errorf("failed to update user name before %s after %s", user.Name, rUser.Name)
+		if rUser.FirstName != user.FirstName {
+			return fmt.Errorf("failed to update user name before %s after %s", user.FirstName, rUser.FirstName)
 		}
 		if rUser.Metadata["Update"] != user.Metadata["Update"] {
 			return fmt.Errorf("failed to update user metadata before %s after %s", user.Metadata["Update"], rUser.Metadata["Update"])
 		}
 		user = rUser
-		user.Credentials.Identity = namesgenerator.Generate()
-		rUser, err = s.UpdateUserIdentity(user, token)
+		user.Credentials.Username = namesgenerator.Generate()
+		rUser, err = s.UpdateUsername(user, token)
 		if err != nil {
 			return fmt.Errorf("failed to update user identity %w", err)
 		}
-		if rUser.Credentials.Identity != user.Credentials.Identity {
-			return fmt.Errorf("failed to update user identity before %s after %s", user.Credentials.Identity, rUser.Credentials.Identity)
+		if rUser.Credentials.Username != user.Credentials.Username {
+			return fmt.Errorf("failed to update user name before %s after %s", user.Credentials.Username, rUser.Credentials.Username)
+		}
+		user = rUser
+		rUser, err = s.UpdateUserEmail(user, token)
+		if err != nil {
+			return fmt.Errorf("failed to update user identity %w", err)
+		}
+		if rUser.Email != user.Email {
+			return fmt.Errorf("failed to update user identity before %s after %s", user.Email, rUser.Email)
 		}
 		user = rUser
 		user.Tags = []string{namesgenerator.Generate()}
@@ -420,7 +434,7 @@ func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, thing
 	for _, group := range groups {
 		group.Name = namesgenerator.Generate()
 		group.Metadata = sdk.Metadata{"Update": namesgenerator.Generate()}
-		rGroup, err := s.UpdateGroup(group, token)
+		rGroup, err := s.UpdateGroup(group, domainID, token)
 		if err != nil {
 			return fmt.Errorf("failed to update group %w", err)
 		}
@@ -431,7 +445,7 @@ func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, thing
 			return fmt.Errorf("failed to update group metadata before %s after %s", group.Metadata["Update"], rGroup.Metadata["Update"])
 		}
 		group = rGroup
-		rGroup, err = s.DisableGroup(group.ID, token)
+		rGroup, err = s.DisableGroup(group.ID, domainID, token)
 		if err != nil {
 			return fmt.Errorf("failed to disable group %w", err)
 		}
@@ -439,7 +453,7 @@ func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, thing
 			return fmt.Errorf("failed to disable group before %s after %s", group.Status, rGroup.Status)
 		}
 		group = rGroup
-		rGroup, err = s.EnableGroup(group.ID, token)
+		rGroup, err = s.EnableGroup(group.ID, domainID, token)
 		if err != nil {
 			return fmt.Errorf("failed to enable group %w", err)
 		}
@@ -450,7 +464,7 @@ func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, thing
 	for _, thing := range things {
 		thing.Name = namesgenerator.Generate()
 		thing.Metadata = sdk.Metadata{"Update": namesgenerator.Generate()}
-		rThing, err := s.UpdateThing(thing, token)
+		rThing, err := s.UpdateThing(thing, domainID, token)
 		if err != nil {
 			return fmt.Errorf("failed to update thing %w", err)
 		}
@@ -461,13 +475,13 @@ func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, thing
 			return fmt.Errorf("failed to update thing metadata before %s after %s", thing.Metadata["Update"], rThing.Metadata["Update"])
 		}
 		thing = rThing
-		rThing, err = s.UpdateThingSecret(thing.ID, thing.Credentials.Secret, token)
+		rThing, err = s.UpdateThingSecret(thing.ID, thing.Credentials.Secret, domainID, token)
 		if err != nil {
 			return fmt.Errorf("failed to update thing secret %w", err)
 		}
 		thing = rThing
 		thing.Tags = []string{namesgenerator.Generate()}
-		rThing, err = s.UpdateThingTags(thing, token)
+		rThing, err = s.UpdateThingTags(thing, domainID, token)
 		if err != nil {
 			return fmt.Errorf("failed to update thing tags %w", err)
 		}
@@ -475,7 +489,7 @@ func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, thing
 			return fmt.Errorf("failed to update thing tags before %s after %s", thing.Tags[0], rThing.Tags[0])
 		}
 		thing = rThing
-		rThing, err = s.DisableThing(thing.ID, token)
+		rThing, err = s.DisableThing(thing.ID, domainID, token)
 		if err != nil {
 			return fmt.Errorf("failed to disable thing %w", err)
 		}
@@ -483,7 +497,7 @@ func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, thing
 			return fmt.Errorf("failed to disable thing before %s after %s", thing.Status, rThing.Status)
 		}
 		thing = rThing
-		rThing, err = s.EnableThing(thing.ID, token)
+		rThing, err = s.EnableThing(thing.ID, domainID, token)
 		if err != nil {
 			return fmt.Errorf("failed to enable thing %w", err)
 		}
@@ -494,7 +508,7 @@ func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, thing
 	for _, channel := range channels {
 		channel.Name = namesgenerator.Generate()
 		channel.Metadata = sdk.Metadata{"Update": namesgenerator.Generate()}
-		rChannel, err := s.UpdateChannel(channel, token)
+		rChannel, err := s.UpdateChannel(channel, domainID, token)
 		if err != nil {
 			return fmt.Errorf("failed to update channel %w", err)
 		}
@@ -505,7 +519,7 @@ func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, thing
 			return fmt.Errorf("failed to update channel metadata before %s after %s", channel.Metadata["Update"], rChannel.Metadata["Update"])
 		}
 		channel = rChannel
-		rChannel, err = s.DisableChannel(channel.ID, token)
+		rChannel, err = s.DisableChannel(channel.ID, domainID, token)
 		if err != nil {
 			return fmt.Errorf("failed to disable channel %w", err)
 		}
@@ -513,7 +527,7 @@ func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, thing
 			return fmt.Errorf("failed to disable channel before %s after %s", channel.Status, rChannel.Status)
 		}
 		channel = rChannel
-		rChannel, err = s.EnableChannel(channel.ID, token)
+		rChannel, err = s.EnableChannel(channel.ID, domainID, token)
 		if err != nil {
 			return fmt.Errorf("failed to enable channel %w", err)
 		}
@@ -525,14 +539,14 @@ func update(s sdk.SDK, token string, users []sdk.User, groups []sdk.Group, thing
 	return nil
 }
 
-func messaging(s sdk.SDK, conf Config, token string, things []sdk.Thing, channels []sdk.Channel) error {
+func messaging(s sdk.SDK, conf Config, domainID, token string, things []sdk.Thing, channels []sdk.Channel) error {
 	for _, thing := range things {
 		for _, channel := range channels {
 			conn := sdk.Connection{
 				ThingID:   thing.ID,
 				ChannelID: channel.ID,
 			}
-			if err := s.Connect(conn, token); err != nil {
+			if err := s.Connect(conn, domainID, token); err != nil {
 				return fmt.Errorf("failed to connect thing %s to channel %s", thing.ID, channel.ID)
 			}
 		}

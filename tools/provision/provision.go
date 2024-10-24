@@ -17,6 +17,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/0x6flab/namegenerator"
@@ -43,6 +44,7 @@ type MgConn struct {
 type Config struct {
 	Host     string
 	Username string
+	Email    string
 	Password string
 	Num      int
 	SSL      bool
@@ -73,14 +75,15 @@ func Provision(conf Config) error {
 	s := sdk.NewSDK(sdkConf)
 
 	user := sdk.User{
+		Email: conf.Email,
 		Credentials: sdk.Credentials{
-			Identity: conf.Username,
+			Username: conf.Username,
 			Secret:   conf.Password,
 		},
 	}
 
-	if user.Credentials.Identity == "" {
-		user.Credentials.Identity = fmt.Sprintf("%s@email.com", namesgenerator.Generate())
+	if user.Email == "" {
+		user.Email = fmt.Sprintf("%s@email.com", namesgenerator.Generate())
 		user.Credentials.Secret = defPass
 	}
 
@@ -92,9 +95,31 @@ func Provision(conf Config) error {
 	var err error
 
 	// Login user
-	token, err := s.CreateToken(sdk.Login{Identity: user.Credentials.Identity, Secret: user.Credentials.Secret})
+	token, err := s.CreateToken(sdk.Login{Email: user.Email, Secret: user.Credentials.Secret})
 	if err != nil {
 		return fmt.Errorf("unable to login user: %s", err.Error())
+	}
+
+	// Create new domain
+	dname := fmt.Sprintf("%s%s", conf.Prefix, namesgenerator.Generate())
+	domain := sdk.Domain{
+		Name:       dname,
+		Alias:      strings.ToLower(dname),
+		Permission: "admin",
+	}
+
+	domain, err = s.CreateDomain(domain, token.AccessToken)
+	if err != nil {
+		return fmt.Errorf("unable to create domain: %w", err)
+	}
+	// Login to domain
+	token, err = s.CreateToken(sdk.Login{
+		Email:    user.Email,
+		Secret:   user.Credentials.Secret,
+		DomainID: domain.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to login user: %w", err)
 	}
 
 	var tlsCert tls.Certificate
@@ -135,14 +160,14 @@ func Provision(conf Config) error {
 		channels[i] = sdk.Channel{Name: fmt.Sprintf("%s-channel-%d", conf.Prefix, i)}
 	}
 
-	things, err = s.CreateThings(things, token.AccessToken)
+	things, err = s.CreateThings(things, domain.ID, token.AccessToken)
 	if err != nil {
 		return fmt.Errorf("failed to create the things: %s", err.Error())
 	}
 
 	var chs []sdk.Channel
 	for _, c := range channels {
-		c, err = s.CreateChannel(c, token.AccessToken)
+		c, err = s.CreateChannel(c, domain.ID, token.AccessToken)
 		if err != nil {
 			return fmt.Errorf("failed to create the chennels: %s", err.Error())
 		}
@@ -237,7 +262,7 @@ func Provision(conf Config) error {
 				ThingID:   tID,
 				ChannelID: cID,
 			}
-			if err := s.Connect(conIDs, token.AccessToken); err != nil {
+			if err := s.Connect(conIDs, domain.ID, token.AccessToken); err != nil {
 				log.Fatalf("Failed to connect things %s to channels %s: %s", tID, cID, err)
 			}
 		}

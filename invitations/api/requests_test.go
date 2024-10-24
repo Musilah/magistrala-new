@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/absmach/magistrala/auth"
 	"github.com/absmach/magistrala/invitations"
 	"github.com/absmach/magistrala/pkg/apiutil"
+	"github.com/absmach/magistrala/pkg/policies"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,7 +27,7 @@ func TestSendInvitationReqValidation(t *testing.T) {
 				token:    valid,
 				UserID:   valid,
 				DomainID: valid,
-				Relation: auth.DomainRelation,
+				Relation: policies.DomainRelation,
 				Resend:   true,
 			},
 			err: nil,
@@ -38,7 +38,7 @@ func TestSendInvitationReqValidation(t *testing.T) {
 				token:    "",
 				UserID:   valid,
 				DomainID: valid,
-				Relation: auth.DomainRelation,
+				Relation: policies.DomainRelation,
 				Resend:   true,
 			},
 			err: apiutil.ErrBearerToken,
@@ -49,7 +49,7 @@ func TestSendInvitationReqValidation(t *testing.T) {
 				token:    valid,
 				UserID:   "",
 				DomainID: valid,
-				Relation: auth.DomainRelation,
+				Relation: policies.DomainRelation,
 				Resend:   true,
 			},
 			err: apiutil.ErrMissingID,
@@ -60,10 +60,10 @@ func TestSendInvitationReqValidation(t *testing.T) {
 				token:    valid,
 				UserID:   valid,
 				DomainID: "",
-				Relation: auth.DomainRelation,
+				Relation: policies.DomainRelation,
 				Resend:   true,
 			},
-			err: errMissingDomain,
+			err: apiutil.ErrMissingDomainID,
 		},
 		{
 			desc: "missing relation",
@@ -90,8 +90,10 @@ func TestSendInvitationReqValidation(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		err := tc.req.validate()
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		})
 	}
 }
 
@@ -105,15 +107,29 @@ func TestListInvitationsReq(t *testing.T) {
 			desc: "valid request",
 			req: listInvitationsReq{
 				token: valid,
-				Page:  invitations.Page{Limit: 1},
+				Page: invitations.Page{
+					Limit:    1,
+					DomainID: valid,
+				},
 			},
 			err: nil,
+		},
+		{
+			desc: "empty domainID",
+			req: listInvitationsReq{
+				token: valid,
+				Page:  invitations.Page{Limit: 1},
+			},
+			err: apiutil.ErrMissingDomainID,
 		},
 		{
 			desc: "empty token",
 			req: listInvitationsReq{
 				token: "",
-				Page:  invitations.Page{Limit: 1},
+				Page: invitations.Page{
+					Limit:    1,
+					DomainID: valid,
+				},
 			},
 			err: apiutil.ErrBearerToken,
 		},
@@ -121,15 +137,20 @@ func TestListInvitationsReq(t *testing.T) {
 			desc: "invalid limit",
 			req: listInvitationsReq{
 				token: valid,
-				Page:  invitations.Page{Limit: 1000},
+				Page: invitations.Page{
+					Limit:    1000,
+					DomainID: valid,
+				},
 			},
 			err: apiutil.ErrLimitSize,
 		},
 	}
 
 	for _, tc := range cases {
-		err := tc.req.validate()
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		})
 	}
 }
 
@@ -143,7 +164,7 @@ func TestAcceptInvitationReq(t *testing.T) {
 			desc: "valid request",
 			req: acceptInvitationReq{
 				token:    valid,
-				DomainID: valid,
+				domainID: valid,
 			},
 			err: nil,
 		},
@@ -158,15 +179,17 @@ func TestAcceptInvitationReq(t *testing.T) {
 			desc: "empty domain_id",
 			req: acceptInvitationReq{
 				token:    valid,
-				DomainID: "",
+				domainID: "",
 			},
-			err: errMissingDomain,
+			err: apiutil.ErrMissingDomainID,
 		},
 	}
 
 	for _, tc := range cases {
-		err := tc.req.validate()
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		})
 	}
 }
 
@@ -210,12 +233,14 @@ func TestInvitationReqValidation(t *testing.T) {
 				userID:   valid,
 				domainID: "",
 			},
-			err: errMissingDomain,
+			err: apiutil.ErrMissingDomainID,
 		},
 	}
 
 	for _, tc := range cases {
-		err := tc.req.validate()
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		})
 	}
 }

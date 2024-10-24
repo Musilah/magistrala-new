@@ -31,7 +31,6 @@ func TestCreateThingReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: createClientReq{
-				token: valid,
 				client: mgclients.Client{
 					ID:   validID,
 					Name: valid,
@@ -40,20 +39,8 @@ func TestCreateThingReqValidate(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: createClientReq{
-				token: "",
-				client: mgclients.Client{
-					ID:   validID,
-					Name: valid,
-				},
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "name too long",
 			req: createClientReq{
-				token: valid,
 				client: mgclients.Client{
 					ID:   validID,
 					Name: strings.Repeat("a", api.MaxNameSize+1),
@@ -64,7 +51,6 @@ func TestCreateThingReqValidate(t *testing.T) {
 		{
 			desc: "invalid id",
 			req: createClientReq{
-				token: valid,
 				client: mgclients.Client{
 					ID:   invalid,
 					Name: valid,
@@ -74,8 +60,10 @@ func TestCreateThingReqValidate(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		err := tc.req.validate()
-		assert.Equal(t, tc.err, err)
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err)
+		})
 	}
 }
 
@@ -88,7 +76,6 @@ func TestCreateThingsReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: createClientsReq{
-				token: valid,
 				Clients: []mgclients.Client{
 					{
 						ID:   validID,
@@ -99,22 +86,8 @@ func TestCreateThingsReqValidate(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: createClientsReq{
-				token: "",
-				Clients: []mgclients.Client{
-					{
-						ID:   validID,
-						Name: valid,
-					},
-				},
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty list",
 			req: createClientsReq{
-				token:   valid,
 				Clients: []mgclients.Client{},
 			},
 			err: apiutil.ErrEmptyList,
@@ -122,7 +95,6 @@ func TestCreateThingsReqValidate(t *testing.T) {
 		{
 			desc: "name too long",
 			req: createClientsReq{
-				token: valid,
 				Clients: []mgclients.Client{
 					{
 						ID:   validID,
@@ -135,7 +107,6 @@ func TestCreateThingsReqValidate(t *testing.T) {
 		{
 			desc: "invalid id",
 			req: createClientsReq{
-				token: valid,
 				Clients: []mgclients.Client{
 					{
 						ID:   invalid,
@@ -146,9 +117,11 @@ func TestCreateThingsReqValidate(t *testing.T) {
 			err: apiutil.ErrInvalidIDFormat,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -161,31 +134,23 @@ func TestViewClientReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: viewClientReq{
-				token: valid,
-				id:    validID,
+				id: validID,
 			},
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: viewClientReq{
-				token: "",
-				id:    validID,
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty id",
 			req: viewClientReq{
-				token: valid,
-				id:    "",
+				id: "",
 			},
 			err: apiutil.ErrMissingID,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -198,31 +163,23 @@ func TestViewClientPermsReq(t *testing.T) {
 		{
 			desc: "valid request",
 			req: viewClientPermsReq{
-				token: valid,
-				id:    validID,
+				id: validID,
 			},
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: viewClientPermsReq{
-				token: "",
-				id:    validID,
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty id",
 			req: viewClientPermsReq{
-				token: valid,
-				id:    "",
+				id: "",
 			},
 			err: apiutil.ErrMissingID,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -235,7 +192,6 @@ func TestListClientsReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: listClientsReq{
-				token: valid,
 				limit: 10,
 			},
 			err: nil,
@@ -243,7 +199,6 @@ func TestListClientsReqValidate(t *testing.T) {
 		{
 			desc: "limit too big",
 			req: listClientsReq{
-				token: valid,
 				limit: api.MaxLimitSize + 1,
 			},
 			err: apiutil.ErrLimitSize,
@@ -251,7 +206,6 @@ func TestListClientsReqValidate(t *testing.T) {
 		{
 			desc: "limit too small",
 			req: listClientsReq{
-				token: valid,
 				limit: 0,
 			},
 			err: apiutil.ErrLimitSize,
@@ -259,7 +213,6 @@ func TestListClientsReqValidate(t *testing.T) {
 		{
 			desc: "invalid visibility",
 			req: listClientsReq{
-				token:      valid,
 				limit:      10,
 				visibility: "invalid",
 			},
@@ -268,16 +221,17 @@ func TestListClientsReqValidate(t *testing.T) {
 		{
 			desc: "name too long",
 			req: listClientsReq{
-				token: valid,
 				limit: 10,
 				name:  strings.Repeat("a", api.MaxNameSize+1),
 			},
 			err: apiutil.ErrNameSize,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -290,31 +244,23 @@ func TestListMembersReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: listMembersReq{
-				token:   valid,
 				groupID: validID,
 			},
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: listMembersReq{
-				token:   "",
-				groupID: validID,
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty id",
 			req: listMembersReq{
-				token:   valid,
 				groupID: "",
 			},
 			err: apiutil.ErrMissingID,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -327,43 +273,33 @@ func TestUpdateClientReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: updateClientReq{
-				token: valid,
-				id:    validID,
-				Name:  valid,
+				id:   validID,
+				Name: valid,
 			},
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: updateClientReq{
-				token: "",
-				id:    validID,
-				Name:  valid,
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty id",
 			req: updateClientReq{
-				token: valid,
-				id:    "",
-				Name:  valid,
+				id:   "",
+				Name: valid,
 			},
 			err: apiutil.ErrMissingID,
 		},
 		{
 			desc: "name too long",
 			req: updateClientReq{
-				token: valid,
-				id:    validID,
-				Name:  strings.Repeat("a", api.MaxNameSize+1),
+				id:   validID,
+				Name: strings.Repeat("a", api.MaxNameSize+1),
 			},
 			err: apiutil.ErrNameSize,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -376,34 +312,25 @@ func TestUpdateClientTagsReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: updateClientTagsReq{
-				token: valid,
-				id:    validID,
-				Tags:  []string{"tag1", "tag2"},
+				id:   validID,
+				Tags: []string{"tag1", "tag2"},
 			},
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: updateClientTagsReq{
-				token: "",
-				id:    validID,
-				Tags:  []string{"tag1", "tag2"},
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty id",
 			req: updateClientTagsReq{
-				token: valid,
-				id:    "",
-				Tags:  []string{"tag1", "tag2"},
+				id:   "",
+				Tags: []string{"tag1", "tag2"},
 			},
 			err: apiutil.ErrMissingID,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -416,25 +343,14 @@ func TestUpdateClientCredentialsReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: updateClientCredentialsReq{
-				token:  valid,
 				id:     validID,
 				Secret: valid,
 			},
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: updateClientCredentialsReq{
-				token:  "",
-				id:     validID,
-				Secret: valid,
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty id",
 			req: updateClientCredentialsReq{
-				token:  valid,
 				id:     "",
 				Secret: valid,
 			},
@@ -443,16 +359,17 @@ func TestUpdateClientCredentialsReqValidate(t *testing.T) {
 		{
 			desc: "empty secret",
 			req: updateClientCredentialsReq{
-				token:  valid,
 				id:     validID,
 				Secret: "",
 			},
 			err: apiutil.ErrMissingSecret,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -465,23 +382,23 @@ func TestChangeClientStatusReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: changeClientStatusReq{
-				token: valid,
-				id:    validID,
+				id: validID,
 			},
 			err: nil,
 		},
 		{
 			desc: "empty id",
 			req: changeClientStatusReq{
-				token: valid,
-				id:    "",
+				id: "",
 			},
 			err: apiutil.ErrMissingID,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -494,7 +411,6 @@ func TestAssignUsersRequestValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: assignUsersRequest{
-				token:    valid,
 				groupID:  validID,
 				UserIDs:  []string{validID},
 				Relation: valid,
@@ -502,19 +418,8 @@ func TestAssignUsersRequestValidate(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: assignUsersRequest{
-				token:    "",
-				groupID:  validID,
-				UserIDs:  []string{validID},
-				Relation: valid,
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty id",
 			req: assignUsersRequest{
-				token:    valid,
 				groupID:  "",
 				UserIDs:  []string{validID},
 				Relation: valid,
@@ -524,7 +429,6 @@ func TestAssignUsersRequestValidate(t *testing.T) {
 		{
 			desc: "empty users",
 			req: assignUsersRequest{
-				token:    valid,
 				groupID:  validID,
 				UserIDs:  []string{},
 				Relation: valid,
@@ -534,7 +438,6 @@ func TestAssignUsersRequestValidate(t *testing.T) {
 		{
 			desc: "empty relation",
 			req: assignUsersRequest{
-				token:    valid,
 				groupID:  validID,
 				UserIDs:  []string{validID},
 				Relation: "",
@@ -542,72 +445,11 @@ func TestAssignUsersRequestValidate(t *testing.T) {
 			err: apiutil.ErrMissingRelation,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
-	}
-}
-
-func TestUnassignUsersRequestValidate(t *testing.T) {
-	cases := []struct {
-		desc string
-		req  unassignUsersRequest
-		err  error
-	}{
-		{
-			desc: "valid request",
-			req: unassignUsersRequest{
-				token:    valid,
-				groupID:  validID,
-				UserIDs:  []string{validID},
-				Relation: valid,
-			},
-			err: nil,
-		},
-		{
-			desc: "empty token",
-			req: unassignUsersRequest{
-				token:    "",
-				groupID:  validID,
-				UserIDs:  []string{validID},
-				Relation: valid,
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
-			desc: "empty id",
-			req: unassignUsersRequest{
-				token:    valid,
-				groupID:  "",
-				UserIDs:  []string{validID},
-				Relation: valid,
-			},
-			err: apiutil.ErrMissingID,
-		},
-		{
-			desc: "empty users",
-			req: unassignUsersRequest{
-				token:    valid,
-				groupID:  validID,
-				UserIDs:  []string{},
-				Relation: valid,
-			},
-			err: apiutil.ErrEmptyList,
-		},
-		{
-			desc: "empty relation",
-			req: unassignUsersRequest{
-				token:    valid,
-				groupID:  validID,
-				UserIDs:  []string{validID},
-				Relation: "",
-			},
-			err: nil,
-		},
-	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -620,25 +462,14 @@ func TestAssignUserGroupsRequestValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: assignUserGroupsRequest{
-				token:        valid,
 				groupID:      validID,
 				UserGroupIDs: []string{validID},
 			},
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: assignUserGroupsRequest{
-				token:        "",
-				groupID:      validID,
-				UserGroupIDs: []string{validID},
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty group id",
 			req: assignUserGroupsRequest{
-				token:        valid,
 				groupID:      "",
 				UserGroupIDs: []string{validID},
 			},
@@ -647,65 +478,17 @@ func TestAssignUserGroupsRequestValidate(t *testing.T) {
 		{
 			desc: "empty user group ids",
 			req: assignUserGroupsRequest{
-				token:        valid,
 				groupID:      validID,
 				UserGroupIDs: []string{},
 			},
 			err: apiutil.ErrEmptyList,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
-	}
-}
-
-func TestUnassignUserGroupsRequestValidate(t *testing.T) {
-	cases := []struct {
-		desc string
-		req  unassignUserGroupsRequest
-		err  error
-	}{
-		{
-			desc: "valid request",
-			req: unassignUserGroupsRequest{
-				token:        valid,
-				groupID:      validID,
-				UserGroupIDs: []string{validID},
-			},
-			err: nil,
-		},
-		{
-			desc: "empty token",
-			req: unassignUserGroupsRequest{
-				token:        "",
-				groupID:      validID,
-				UserGroupIDs: []string{validID},
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
-			desc: "empty group id",
-			req: unassignUserGroupsRequest{
-				token:        valid,
-				groupID:      "",
-				UserGroupIDs: []string{validID},
-			},
-			err: apiutil.ErrMissingID,
-		},
-		{
-			desc: "empty user group ids",
-			req: unassignUserGroupsRequest{
-				token:        valid,
-				groupID:      validID,
-				UserGroupIDs: []string{},
-			},
-			err: apiutil.ErrEmptyList,
-		},
-	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -718,7 +501,6 @@ func TestConnectChannelThingRequestValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: connectChannelThingRequest{
-				token:     valid,
 				ChannelID: validID,
 				ThingID:   validID,
 			},
@@ -727,7 +509,6 @@ func TestConnectChannelThingRequestValidate(t *testing.T) {
 		{
 			desc: "empty channel id",
 			req: connectChannelThingRequest{
-				token:     valid,
 				ChannelID: "",
 				ThingID:   validID,
 			},
@@ -736,56 +517,17 @@ func TestConnectChannelThingRequestValidate(t *testing.T) {
 		{
 			desc: "empty thing id",
 			req: connectChannelThingRequest{
-				token:     valid,
 				ChannelID: validID,
 				ThingID:   "",
 			},
 			err: apiutil.ErrMissingID,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
-	}
-}
-
-func TestDisconnectChannelThingRequestValidate(t *testing.T) {
-	cases := []struct {
-		desc string
-		req  disconnectChannelThingRequest
-		err  error
-	}{
-		{
-			desc: "valid request",
-			req: disconnectChannelThingRequest{
-				token:     valid,
-				ChannelID: validID,
-				ThingID:   validID,
-			},
-			err: nil,
-		},
-		{
-			desc: "empty channel id",
-			req: disconnectChannelThingRequest{
-				token:     valid,
-				ChannelID: "",
-				ThingID:   validID,
-			},
-			err: apiutil.ErrMissingID,
-		},
-		{
-			desc: "empty thing id",
-			req: disconnectChannelThingRequest{
-				token:     valid,
-				ChannelID: validID,
-				ThingID:   "",
-			},
-			err: apiutil.ErrMissingID,
-		},
-	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -798,7 +540,6 @@ func TestThingShareRequestValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: thingShareRequest{
-				token:    valid,
 				thingID:  validID,
 				UserIDs:  []string{validID},
 				Relation: valid,
@@ -808,7 +549,6 @@ func TestThingShareRequestValidate(t *testing.T) {
 		{
 			desc: "empty thing id",
 			req: thingShareRequest{
-				token:    valid,
 				thingID:  "",
 				UserIDs:  []string{validID},
 				Relation: valid,
@@ -818,7 +558,6 @@ func TestThingShareRequestValidate(t *testing.T) {
 		{
 			desc: "empty user ids",
 			req: thingShareRequest{
-				token:    valid,
 				thingID:  validID,
 				UserIDs:  []string{},
 				Relation: valid,
@@ -828,7 +567,6 @@ func TestThingShareRequestValidate(t *testing.T) {
 		{
 			desc: "empty relation",
 			req: thingShareRequest{
-				token:    valid,
 				thingID:  validID,
 				UserIDs:  []string{validID},
 				Relation: "",
@@ -836,62 +574,11 @@ func TestThingShareRequestValidate(t *testing.T) {
 			err: apiutil.ErrMalformedPolicy,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
-	}
-}
-
-func TestThingUnshareRequestValidate(t *testing.T) {
-	cases := []struct {
-		desc string
-		req  thingUnshareRequest
-		err  error
-	}{
-		{
-			desc: "valid request",
-			req: thingUnshareRequest{
-				token:    valid,
-				thingID:  validID,
-				UserIDs:  []string{validID},
-				Relation: valid,
-			},
-			err: nil,
-		},
-		{
-			desc: "empty thing id",
-			req: thingUnshareRequest{
-				token:    valid,
-				thingID:  "",
-				UserIDs:  []string{validID},
-				Relation: valid,
-			},
-			err: apiutil.ErrMissingID,
-		},
-		{
-			desc: "empty user ids",
-			req: thingUnshareRequest{
-				token:    valid,
-				thingID:  validID,
-				UserIDs:  []string{},
-				Relation: valid,
-			},
-			err: apiutil.ErrMalformedPolicy,
-		},
-		{
-			desc: "empty relation",
-			req: thingUnshareRequest{
-				token:    valid,
-				thingID:  validID,
-				UserIDs:  []string{validID},
-				Relation: "",
-			},
-			err: apiutil.ErrMalformedPolicy,
-		},
-	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }
 
@@ -904,30 +591,22 @@ func TestDeleteClientReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: deleteClientReq{
-				token: valid,
-				id:    validID,
+				id: validID,
 			},
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: deleteClientReq{
-				token: "",
-				id:    validID,
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty id",
 			req: deleteClientReq{
-				token: valid,
-				id:    "",
+				id: "",
 			},
 			err: apiutil.ErrMissingID,
 		},
 	}
-	for _, c := range cases {
-		err := c.req.validate()
-		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.req.validate()
+			assert.Equal(t, tc.err, err, "%s: expected %s got %s\n", tc.desc, tc.err, err)
+		})
 	}
 }

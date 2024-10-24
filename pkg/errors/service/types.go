@@ -69,4 +69,10 @@ var (
 
 	// ErrInvitationAlreadyAccepted indicates that the invitation is already accepted.
 	ErrInvitationAlreadyAccepted = errors.New("invitation already accepted")
+
+	// ErrParentGroupAuthorization indicates failure occurred while authorizing the parent group.
+	ErrParentGroupAuthorization = errors.New("failed to authorize parent group")
+
+	// ErrMissingNames indicates that the user's names are missing.
+	ErrMissingNames = errors.New("missing user names")
 )

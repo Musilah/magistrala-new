@@ -20,14 +20,15 @@ const (
 
 // Cert represents certs data.
 type Cert struct {
-	ThingID    string    `json:"thing_id,omitempty"`
-	CertSerial string    `json:"cert_serial,omitempty"`
-	ClientKey  string    `json:"client_key,omitempty"`
-	ClientCert string    `json:"client_cert,omitempty"`
-	Expiration time.Time `json:"expiration,omitempty"`
+	SerialNumber string    `json:"serial_number,omitempty"`
+	Certificate  string    `json:"certificate,omitempty"`
+	Key          string    `json:"key,omitempty"`
+	Revoked      bool      `json:"revoked,omitempty"`
+	ExpiryTime   time.Time `json:"expiry_time,omitempty"`
+	ThingID      string    `json:"thing_id,omitempty"`
 }
 
-func (sdk mgSDK) IssueCert(thingID, validity, token string) (Cert, errors.SDKError) {
+func (sdk mgSDK) IssueCert(thingID, validity, domainID, token string) (Cert, errors.SDKError) {
 	r := certReq{
 		ThingID:  thingID,
 		Validity: validity,
@@ -37,7 +38,7 @@ func (sdk mgSDK) IssueCert(thingID, validity, token string) (Cert, errors.SDKErr
 		return Cert{}, errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s", sdk.certsURL, certsEndpoint)
+	url := fmt.Sprintf("%s/%s/%s", sdk.certsURL, domainID, certsEndpoint)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPost, url, token, d, nil, http.StatusCreated)
 	if sdkerr != nil {
@@ -48,12 +49,11 @@ func (sdk mgSDK) IssueCert(thingID, validity, token string) (Cert, errors.SDKErr
 	if err := json.Unmarshal(body, &c); err != nil {
 		return Cert{}, errors.NewSDKError(err)
 	}
-
 	return c, nil
 }
 
-func (sdk mgSDK) ViewCert(id, token string) (Cert, errors.SDKError) {
-	url := fmt.Sprintf("%s/%s/%s", sdk.certsURL, certsEndpoint, id)
+func (sdk mgSDK) ViewCert(id, domainID, token string) (Cert, errors.SDKError) {
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.certsURL, domainID, certsEndpoint, id)
 
 	_, body, err := sdk.processRequest(http.MethodGet, url, token, nil, nil, http.StatusOK)
 	if err != nil {
@@ -68,17 +68,16 @@ func (sdk mgSDK) ViewCert(id, token string) (Cert, errors.SDKError) {
 	return cert, nil
 }
 
-func (sdk mgSDK) ViewCertByThing(thingID, token string) (CertSerials, errors.SDKError) {
+func (sdk mgSDK) ViewCertByThing(thingID, domainID, token string) (CertSerials, errors.SDKError) {
 	if thingID == "" {
 		return CertSerials{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s", sdk.certsURL, serialsEndpoint, thingID)
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.certsURL, domainID, serialsEndpoint, thingID)
 
 	_, body, err := sdk.processRequest(http.MethodGet, url, token, nil, nil, http.StatusOK)
 	if err != nil {
 		return CertSerials{}, err
 	}
-
 	var cs CertSerials
 	if err := json.Unmarshal(body, &cs); err != nil {
 		return CertSerials{}, errors.NewSDKError(err)
@@ -87,8 +86,8 @@ func (sdk mgSDK) ViewCertByThing(thingID, token string) (CertSerials, errors.SDK
 	return cs, nil
 }
 
-func (sdk mgSDK) RevokeCert(id, token string) (time.Time, errors.SDKError) {
-	url := fmt.Sprintf("%s/%s/%s", sdk.certsURL, certsEndpoint, id)
+func (sdk mgSDK) RevokeCert(id, domainID, token string) (time.Time, errors.SDKError) {
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.certsURL, domainID, certsEndpoint, id)
 
 	_, body, err := sdk.processRequest(http.MethodDelete, url, token, nil, nil, http.StatusOK)
 	if err != nil {

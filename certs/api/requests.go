@@ -6,20 +6,26 @@ package api
 import (
 	"time"
 
+	"github.com/absmach/magistrala/certs"
 	"github.com/absmach/magistrala/pkg/apiutil"
 )
 
 const maxLimitSize = 100
 
 type addCertsReq struct {
-	token   string
-	ThingID string `json:"thing_id"`
-	TTL     string `json:"ttl"`
+	token    string
+	domainID string
+	ThingID  string `json:"thing_id"`
+	TTL      string `json:"ttl"`
 }
 
 func (req addCertsReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
+	}
+
+	if req.domainID == "" {
+		return apiutil.ErrMissingDomainID
 	}
 
 	if req.ThingID == "" {
@@ -39,30 +45,22 @@ func (req addCertsReq) validate() error {
 
 type listReq struct {
 	thingID string
-	token   string
-	offset  uint64
-	limit   uint64
+	pm      certs.PageMetadata
 }
 
 func (req *listReq) validate() error {
-	if req.token == "" {
-		return apiutil.ErrBearerToken
-	}
-	if req.limit > maxLimitSize {
+	if req.pm.Limit > maxLimitSize {
 		return apiutil.ErrLimitSize
 	}
+
 	return nil
 }
 
 type viewReq struct {
 	serialID string
-	token    string
 }
 
 func (req *viewReq) validate() error {
-	if req.token == "" {
-		return apiutil.ErrBearerToken
-	}
 	if req.serialID == "" {
 		return apiutil.ErrMissingID
 	}
@@ -71,13 +69,18 @@ func (req *viewReq) validate() error {
 }
 
 type revokeReq struct {
-	token  string
-	certID string
+	token    string
+	certID   string
+	domainID string
 }
 
 func (req *revokeReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
+	}
+
+	if req.domainID == "" {
+		return apiutil.ErrMissingDomainID
 	}
 
 	if req.certID == "" {
